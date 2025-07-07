@@ -5,6 +5,7 @@ const ConnectDB = require('./config/db')
 const dotenv = require('dotenv')
 const cors = require('cors')
 const CourseRoute = require('./Routes/courseRoute')
+const path = require('path')
 
 
 dotenv.config()
@@ -15,7 +16,17 @@ const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors())
+app.use(cors({
+  origin: '*'
+}))
+
+// Catch-all route to serve React app
+app.use(express.static(path.join(__dirname, '../client/dist')))
+
+// Handle all other routes to return React index.html (for React Router)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist/index.html'))
+})
 
 app.use('/api/auth', authRoute)
 app.use('/api/students', studentRoute)
