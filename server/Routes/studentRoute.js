@@ -6,7 +6,7 @@ const router = express.Router();
 
 //other routes
 router.get("/all", getAllStudents)
-router.get("/me/:regNo", getSingleStudent)
+//router.get("/me/:regNo", getSingleStudent)
 
 
 module.exports = router;

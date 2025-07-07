@@ -7,9 +7,9 @@ const { getCourses, modifyCourse, deletecourse, getAllEnrollments, enrollStudent
 router.get('/', getCourses)
 router.post('/', createCourses)
 router.get('/enrollment', getAllEnrollments)
-router.put('/:code', modifyCourse)
-router.delete('/:code', deletecourse)
-router.post('/create', enrollStudents)
+//router.put('/:code', modifyCourse)
+//router.delete('/:code', deletecourse)
+//router.post('/create', enrollStudents)
 
 
 module.exports = router;
