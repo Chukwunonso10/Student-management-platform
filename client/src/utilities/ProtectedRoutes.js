@@ -1,7 +1,8 @@
-
+import { useNavigate } from "react-router-dom"
 
 export default function ProtectedRoute({children}) {
+    navigate = useNavigate()
     
     const token = localStorage.getItem('token')
-    return token ? children : window.location.href="/login"
+    return token ? children : navigate("/login")
 }
