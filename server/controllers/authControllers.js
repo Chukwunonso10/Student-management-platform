@@ -34,7 +34,7 @@ const signup = async (req, res) =>{
             department: department._id,
             faculty: faculty._id
             })
-            console.log("createdstudent",student)
+            console.log("createdstudent: ",student)
         if (!student) return res.status(500).json({ message: "Unable to create student"})
         const token = jwt.sign({userId: student._id, email: student.email, firstName: student.firstName}, process.env.JWT_SIGN, {expiresIn: "1hr"})
         
@@ -57,7 +57,7 @@ const login = async (req, res) =>{
         if (!student) return res.status(404).json({ message: "Email is not registered! sign up"})
         const match = await bcrypt.compare(password, student.password)
         if (match){
-            const token = await jwt.sign({userId: student._id, student: student.email, firstName: student.firstName}, process.env.JWT_SIGN, {expiresIn: "1hr"})
+            const token = jwt.sign({userId: student._id, student: student.email, firstName: student.firstName}, process.env.JWT_SIGN, {expiresIn: "1hr"})
             res.status(201).json(token)
         }
         
