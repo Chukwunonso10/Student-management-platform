@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
-const Faculty = require('../model/FacultyModel')
-const Department = require('../model/DepartmentModel')
-const Student = require('../model/StudentModel')
+const Faculty = require('../models/FacultyModel')
+const Department = require('../models/DepartmentModel')
+const Student = require('../models/StudentModel')
 
 const generateRegNo = async (facultyName, departmentName) => {
     //regNo = ${facultcode}/${deptcode}/year2digit/3 studentnum

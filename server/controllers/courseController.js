@@ -1,6 +1,6 @@
-const Course = require('../model/courseModel')
-const Department = require('../model/DepartmentModel')
-const Student = require('../model/StudentModel')
+const Course = require('../models/courseModel')
+const Department = require('../models/DepartmentModel')
+const Student = require('../models/StudentModel')
 
 const getCourses =async (req, res) =>{
     try {

@@ -1,9 +1,9 @@
-const Student = require('../model/StudentModel')
+const Student = require('../models/StudentModel')
 const generateRegNo = require('../utility/RegNo')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
-const Faculty = require('../model/FacultyModel')
-const Department = require('../model/DepartmentModel')
+const Faculty = require('../models/FacultyModel')
+const Department = require('../models/DepartmentModel')
 //sign up controllers
 
 const signup = async (req, res) =>{

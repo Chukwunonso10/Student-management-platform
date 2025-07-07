@@ -1,5 +1,5 @@
-const Student = require('../model/StudentModel')
-const Lecturer = require('../model/LecturersModel')
+const Student = require('../models/StudentModel')
+const Lecturer = require('../models/LecturersModel')
 
 
 
