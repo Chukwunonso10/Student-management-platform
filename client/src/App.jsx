@@ -1,7 +1,6 @@
 import SignUp from "./pages/SignUp"
 import Login from "@/pages/Login"
 import { Routes, Route } from "react-router-dom"
-//import ProtectedRoute from "@/utilities/ProtectedRoutes"
 import { BrowserRouter } from 'react-router-dom'
 import Dashboard from "./pages/Dashboard"
 import ProtectedRoute from "./utilities/ProtectedRoutes"
