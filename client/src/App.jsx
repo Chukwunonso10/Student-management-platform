@@ -4,7 +4,7 @@ import { Routes, Route } from "react-router-dom"
 
 import { BrowserRouter } from 'react-router-dom'
 import Dashboard from "./pages/Dashboard"
-import ProtectedRoute from "./utilities/ProtectedRoutes"
+import ProtectedRoute from "./utilities/ProtectedRoute"
 import ThemeToggle from "./components/themeToggle"
 
 

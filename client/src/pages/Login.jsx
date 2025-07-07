@@ -21,17 +21,14 @@ export default function Login() {
         
         try {
             const payload = {password, email}
-            console.log(payload)
             const res = await API.post("/auth/login", payload)
-            console.log(res.data)
             localStorage.setItem("token", res.data.token)
-            console.log(res.data.token)
             alert("Login Successful")
             navigate("/dashboard")
             
 
         } catch(error) {
-            alert(error.response?.data?.message || "Login Failed n")
+            alert(error.response?.data?.message || "Login Failed ")
         }finally{
             setLoading(false)
         }

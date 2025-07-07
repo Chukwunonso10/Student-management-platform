@@ -1,6 +1,7 @@
 import axios from 'axios'
 
-const baseURL = 'https://schoolmanagement-jt8e.onrender.com/api'
+const baseURL = `${import.meta.env.VITE_API_BASE_URL}`
+
 const API = axios.create({ baseURL })
 
 API.interceptors.request.use(
