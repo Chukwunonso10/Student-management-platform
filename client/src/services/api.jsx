@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const baseURL = 'http://localhost:3000/api'
+const baseURL = 'https://schoolmanagement-jt8e.onrender.com/api'
 const API = axios.create({ baseURL })
 
 API.interceptors.request.use(
