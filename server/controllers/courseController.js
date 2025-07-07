@@ -1,4 +1,4 @@
-const Course = require('../models/courseModel')
+const Course = require('../models/CourseModel')
 const Department = require('../models/DepartmentModel')
 const Student = require('../models/StudentModel')
 
@@ -57,7 +57,7 @@ const enrollStudents = async (req,res) =>{
         if (!student) return res.status(404).json({ message: " student not found"})
 
         const course = await Course.findOne({ code })
-        if (!code) res.status(400).json({ message: "coursecode not found "})
+        if (!course) res.status(400).json({ message: "coursecode not found "})
 
         //Check if already enrolled
         const alreadyEnrolled = student.courses.some(c => c.courseId.toString() === course._id.toString());
@@ -82,7 +82,7 @@ const enrollStudents = async (req,res) =>{
 
 const getAllEnrollments = async (req, res) =>{
     try {
-        const courses = await Course.find({ enrolledStudent: {$exists: true, $not: {$size: 0}}})
+        const courses = await Course.find({ enrolledStudents: {$exists: true, $not: {$size: 0}}})
                         .populate("enrolledStudents", "firstName lastName email ")
         res.status(200).json(courses)
     } catch (error) {
