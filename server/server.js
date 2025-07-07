@@ -23,9 +23,7 @@ app.use(cors({
 app.use('/api/auth', authRoute)
 app.use('/api/students', studentRoute)
 app.use('/api/course', CourseRoute)
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'client', 'dist', 'index.html'));
-});
+
 
 
 app.listen(process.env.PORT, () =>{
