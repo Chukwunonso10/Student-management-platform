@@ -20,6 +20,12 @@ app.use(cors({
   origin: '*'
 }))
 
+
+app.use('/api/auth', authRoute)
+app.use('/api/students', studentRoute)
+app.use('/api/course', CourseRoute)
+
+
 // Catch-all route to serve React app
 app.use(express.static(path.join(__dirname, '../client/dist')))
 
@@ -28,9 +34,6 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/dist/index.html'))
 })
 
-app.use('/api/auth', authRoute)
-app.use('/api/students', studentRoute)
-app.use('/api/course', CourseRoute)
 
 
 
