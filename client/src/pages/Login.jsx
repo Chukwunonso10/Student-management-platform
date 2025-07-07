@@ -10,6 +10,7 @@ import { Link } from "react-router-dom"
 
 
 
+
 export default function Login() {
    
     const [email, setEmail ] = useState("")
@@ -23,13 +24,17 @@ export default function Login() {
         
         try {
             const payload = {password, email}
+            console.log(payload)
             const res = await API.post("/auth/login", payload)
+            console.log(res.data)
             localStorage.setItem("token", res.data.token)
-            //window.location.href="/dashboard"
+            console.log(res.data.token)
+            alert("Login Successful")
             navigate("/dashboard")
+            
 
-        } catch (error) {
-            alert(error.response?.data?.message || "Login Failed")
+        } catch(error) {
+            alert(error.response?.data?.message || "Login Failed n")
         }finally{
             setLoading(false)
         }

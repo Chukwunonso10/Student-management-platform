@@ -28,8 +28,9 @@ export default function SignUp() {
             const payload = {firstName, lastName, password, email, facultyName, departmentName}
             const res = await API.post("/auth/register", payload)
             localStorage.setItem("token", res.data.token)
+            alert("Signup was Successful")
             //window.location.href="/dashboard"
-            navigate("/Dashboard")
+            navigate("/login")
 
         } catch (error) {
             console.log("signup error:", error)
