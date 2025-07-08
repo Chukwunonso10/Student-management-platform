@@ -85,7 +85,7 @@ A full-stack web application that enables universities to manage student registr
 
 ```bash
 git clone https://github.com/Chukwunonso10/SchoolManagement.git
-cd student-course-portal
+cd SchoolManagement
 
 PORT=3000
 MONGO_URI_PRODUCTION=your-mongodb-connection-string
