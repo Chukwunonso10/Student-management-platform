@@ -123,9 +123,9 @@ POST /api/course/create (Enroll students)
 GET /api/course/enrollment
 
 📸 Screenshots
-![App Screenshot](/images/screenshot.png)
 
-(Include dashboard images, login page, etc.)
+![Screenshot](images/screenshot.png)
+
 
 🤝 Contributing
 Pull requests are welcome. For major changes, open an issue first to discuss.
