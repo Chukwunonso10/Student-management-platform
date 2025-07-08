@@ -123,7 +123,7 @@ POST /api/course/create (Enroll students)
 GET /api/course/enrollment
 
 📸 Screenshots
-![App Screenshot](/Screenshot%202025-07-08%20024448.png)
+![App Screenshot](./Screenshot%202025-07-08%20024448.png)
 
 (Include dashboard images, login page, etc.)
 
