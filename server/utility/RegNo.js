@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 const Faculty = require('../models/FacultyModel')
 const Department = require('../models/DepartmentModel')
-const Student = require('../models/StudentModel')
+const Student = require('../models/UserModel')
 
 const generateRegNo = async (facultyName, departmentName) => {
     //regNo = ${facultcode}/${deptcode}/year2digit/3 studentnum
@@ -17,7 +17,9 @@ const generateRegNo = async (facultyName, departmentName) => {
     const year = new Date().getFullYear().toString().slice(-2)
     const pre = `${facultycode}/${deptcode}/${year}/`
 
-    const pattern = new RegExp(`^${pre}`)//{regNo: {$regex: `^${pre}`}}
+    // Escape slashes for RegExp
+    const escapedPre = pre.replace(/\//g, '\\/');
+    const pattern = new RegExp(`^${escapedPre}`)//{regNo: {$regex: `^${pre}`}}
     const count = await Student.countDocuments({ regNo: pattern}) //returns a number
     const studentnum = String(count + 1).padStart(3, '0')
 

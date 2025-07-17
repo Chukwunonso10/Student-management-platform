@@ -1,16 +1,54 @@
 const Course = require('../models/CourseModel')
 const Department = require('../models/DepartmentModel')
-const Student = require('../models/StudentModel')
+const Student = require('../models/UserModel')
 
-const getCourses =async (req, res) =>{
+const getAllCourses =async (req, res) =>{
     try {
-        const courses = await Course.find().populate("department enrolledStudents")
+        const { page, limit, search,lecturer, department, semester, isActive, enrollStudents } = req.query
+        const query = { isActive: true }
+
+        if (search){
+            query.$or = [{title: {$regex: search, $options: "i"}}, {code: {$regex: search, $options: "i"}}]
+        }
+        if (lecturer) query.lecturer = lecturer 
+        if (department) query.department = department
+        if (semester) query.semester = semester;
+
+        const courses = await Course.find(query)
+                                        .populate("department", "name code")
+                                        .populate("enrolledStudents", "fullname email")
+                                        .sort({code: 1})
+                                        .limit(limit * 1)
+                                        .skip((page-1) * limit)           
         if (courses.length == 0) return res.status(200).json({ message: "Course is currently empty"})
-        res.status(200).json(courses)
+        const total = Course.countDocuments(query)
+        res.status(200).json({
+                        courses,
+                        totalPages: math.ceil(total / limit),
+                        currentPage: page,
+                        total
+        })
     } catch (error) {
         console.error(error.message)
     }
 }
+
+const getMyCourses = async(req, res) =>{
+    try {
+        const { id } = req.params
+        const course = await Course.findById({ id })
+                                                .populate("department", "name code")
+                                                .populate("enrolledStudents", "fullname email")
+                                                .sort({code: 1})
+
+        if (!course) return res.status(404).json({ message: "No Course was found! "})
+        res.status(200).json(course)
+    } catch (error) {
+        res.status(500).json({ message: "server Error", error: error.message})
+    }
+}
+
+
 const createCourses = async (req, res) =>{
     try {
         const { title, code, unit, departmentName } = req.body
@@ -30,24 +68,26 @@ const createCourses = async (req, res) =>{
     }
 }
 
-const modifyCourse = async (req, res) =>{
+const updateCourse = async (req, res) =>{
     try {
-        const { code } = req.params;
-        const course = await Course.findOne({ code })
-        if (!course) return res.status(404).json({ message: "course code cannot be found "})
-        const updatedCourse = await Course.findOneAndUpdate({ code }, {$set: req.body}, {new: true, runValidators: true})
-        if (!updatedCourse) return res.status(500).json({ message: "unable to update"})
-        res.status(200).json(updatedCourse)
+        const { id } = req.params
+        const Course = await Course.findByIdAndUpdate(id, {$set: req.body}, {new: true, runValidators: true})
+        if (!Course) return res.status(500).json({ message: "unable to update"})
+        res.status(200).json(Course)
     } catch (error) {
         console.error("unable to update", error.message)
     }
 }
 
 const deletecourse = async (req, res) =>{
-    const { code } = req.params;
-    const deletedCourse = await Course.findOneAndDelete({ code })
-    if (!deletedCourse) return res.status(500).json({ message: " unable to delete"})
-    res.status(200).json(deletedCourse)
+   try {
+        const { id } = req.params;
+        const Course = await Course.findByIdAndUpdate(id, {isActive: false }, {new: true})
+        if (!Course) return res.status(500).json({ message: " unable to delete"})
+        res.status(200).json({ message: "course successfully Deleted.."})
+   } catch (error) {
+        res.status(500).json({ error: error.message })
+   }
 }
 
 const enrollStudents = async (req,res) =>{
@@ -84,6 +124,7 @@ const getAllEnrollments = async (req, res) =>{
     try {
         const courses = await Course.find({ enrolledStudents: {$exists: true, $not: {$size: 0}}})
                         .populate("enrolledStudents", "firstName lastName email ")
+                        .populate("departments", "name code ")
         res.status(200).json(courses)
     } catch (error) {
         console.error(error.message)
@@ -92,9 +133,9 @@ const getAllEnrollments = async (req, res) =>{
 }
 
 module.exports = {
-    getCourses,
+    getAllCourses,
     createCourses,
-    modifyCourse,
+    updateCourse,
     deletecourse,
     getAllEnrollments,
     enrollStudents

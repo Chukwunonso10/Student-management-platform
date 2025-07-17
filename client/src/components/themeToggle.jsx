@@ -20,7 +20,7 @@ export default function ThemeToggle() {
     }, [dark])
 
     return (
-        <div>
+        <div className='bg-gray-100 dark:bg-gray-900' >
             <Button variant="ghost" size="icon" onClick={ ()=> setDark(!dark)}>
                 {dark ? <SunIcon className='h-5 w-5 flex items-end' /> : <MoonIcon className='h-5 w-5'/>}
             </Button>

@@ -1,15 +1,16 @@
 const express = require('express')
 const router = express.Router()
-const { getCourses, modifyCourse, deletecourse, getAllEnrollments, enrollStudents, createCourses } = require('../controllers/courseController')
+const { getAllCourses, updateCourse, deletecourse, getAllEnrollments, enrollStudents, createCourses } = require('../controllers/courseController')
+const authenticate = require('../middleware/auth')
 
 
 
-router.get('/', getCourses)
-router.post('/', createCourses)
-router.get('/enrollment', getAllEnrollments)
-//router.put('/:code', modifyCourse)
-//router.delete('/:code', deletecourse)
-//router.post('/create', enrollStudents)
+router.get('/all', authenticate, getAllCourses)
+router.post('/', authenticate, createCourses)
+router.get('/all', authenticate, getAllEnrollments)
+router.put('/:id', authenticate, updateCourse)
+router.delete('/:id', authenticate, deletecourse)
+router.post('/enroll', authenticate, enrollStudents)
 
 
 module.exports = router;

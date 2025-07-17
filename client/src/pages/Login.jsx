@@ -5,6 +5,7 @@ import API from '@/services/api'
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Link } from "react-router-dom"
+import { Eye, EyeOff } from 'lucide-react'
 
 
 
@@ -12,7 +13,9 @@ export default function Login() {
    
     const [email, setEmail ] = useState("")
     const [password, setPassword ] = useState("")
+    const [showPassword, setShowPassword ] = useState(false)
     const [loading, setLoading ] = useState(false)
+    const [role, setrole ] = useState("student")
     const navigate = useNavigate()
 
     const handleLogin = async () =>{
@@ -39,10 +42,10 @@ export default function Login() {
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-zinc-100">
+        <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900">
             <Card className="w-full max-w-md animate shadow-xl">
                 <CardHeader>
-                    <CardTitle className="text-center text-2xl font-bold">Login Page</CardTitle>
+                    <CardTitle className="text-center text-2xl font-bold">{role === 'student' ? "Student Login page" : "Admin's Login Page"}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <Input 
@@ -51,13 +54,18 @@ export default function Login() {
                     value={email}
                     onChange={(e)=>setEmail(e.target.value)}
                     />
-                    <Input 
-                    type="password"
+                   <div className="relative">
+                     <Input 
+                    type={showPassword ? "text" : "password"}
                     placeholder="password"
                     value={password}
                     onChange={(e)=>setPassword(e.target.value)}
                     />
-                    
+                    <Button variant="ghost" size="18" className="absolute top-2 right-2" onClick={()=>setShowPassword(prev => !prev)}>
+                        {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                    </Button>
+                   </div>
+
                 </CardContent>
                 <CardFooter className="flex justify-between">
                     <Button onClick={handleLogin} className="w-full">

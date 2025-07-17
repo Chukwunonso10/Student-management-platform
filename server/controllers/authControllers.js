@@ -1,14 +1,14 @@
-const Student = require('../models/StudentModel')
+const User = require('../models/UserModel')
 const generateRegNo = require('../utility/RegNo')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
 const Faculty = require('../models/FacultyModel')
 const Department = require('../models/DepartmentModel')
-//sign up controllers
+
 
 const signup = async (req, res) =>{
-    const { firstName, lastName, password, email, facultyName, departmentName } = req.body;
-    if ( !firstName || !lastName || !password || !email || !facultyName || !departmentName ) return res.status(500).json({message: "All fields are required"})
+    const { firstName, lastName, password, email, facultyName, departmentName, role } = req.body;
+    if ( !firstName || !lastName || !password || !email || !facultyName || !departmentName) return res.status(500).json({message: "All fields are required"})
     try {
         const faculty = await Faculty.findOne({ name: facultyName})
         console.log("faculty",faculty)
@@ -18,27 +18,39 @@ const signup = async (req, res) =>{
         
         if (!department) return res.status(404).json({message: "department doesnt exist"})
         
-        const studentExists = await Student.findOne({ email })
+        const userExists = await User.findOne({ email })
         
-        if (studentExists) return res.status(409).json({message: "student already exists, log in "})
+        if (userExists) return res.status(409).json({message: "User already exists, log in "})
         const hashedPassword = await bcrypt.hash(password, 10)
 
         const regNo = await generateRegNo(facultyName, departmentName)
 
-        const student = await Student.create({
-             firstName,
+        const user = await User.create({
+            firstName,
             lastName, 
             password: hashedPassword, 
             email, 
-            regNo,
+            regNo: role === "student" ? regNo : null,
             department: department._id,
             faculty: faculty._id
             })
-            console.log("createdstudent: ",student)
-        if (!student) return res.status(500).json({ message: "Unable to create student"})
-        const token = jwt.sign({userId: student._id, email: student.email, firstName: student.firstName}, process.env.JWT_SIGN, {expiresIn: "1hr"})
         
-        res.status(201).json(token)
+        if (!user) return res.status(500).json({ message: "Unable to create User"})
+        const token = jwt.sign({userId: user._id, email: user.email, firstName: user.firstName}, process.env.JWT_SIGN, {expiresIn: "1hr"})
+        
+        res.status(201).json({ 
+            token,
+            user: {
+                id: user._id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                regNo: user.regNo,
+
+            },
+            message: "user successfully created"
+
+        })
         
     } catch (error) {
         console.error("Error occurred while creating account: ", error.message)
@@ -47,18 +59,32 @@ const signup = async (req, res) =>{
     
 } 
 
+
+
 //controller for login
 
 const login = async (req, res) =>{
     const { password, email } = req.body;
     if (!password.trim() || !email.trim() ) return res.status(500).json({message: "All fields are required"})
     try {
-        const student = await Student.findOne({ email })
-        if (!student) return res.status(404).json({ message: "Email is not registered! sign up"})
-        const match = await bcrypt.compare(password, student.password)
-        if (match){
-            const token = jwt.sign({userId: student._id, student: student.email, firstName: student.firstName}, process.env.JWT_SIGN, {expiresIn: "1hr"})
-            res.status(201).json(token)
+        const user = await User.findOne({ email })
+        if (!user) return res.status(404).json({ message: "Email is not registered! sign up"})
+        const ismatch = await bcrypt.compare(password, user.password)
+        if (ismatch){
+            const token = jwt.sign({userId: user._id, email: user.email, firstName: user.firstName}, process.env.JWT_SIGN, {expiresIn: "1hr"})
+            res.status(201).json({ 
+            token,
+            user: {
+                id: user._id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: email,
+                regNo: user.regNo,
+            },
+            message: "user successfully created"
+        })
+        }else{
+            res.status(400).json({message: "passwords doesn't match || invalid credentials"})
         }
         
         
@@ -68,35 +94,42 @@ const login = async (req, res) =>{
     }
 }
 
-const createfaculty = async (req, res) =>{
-    const { name, code } = req.body
-    const faculty = await Faculty.findOne({ name: name })
 
-    if (faculty) return res.status(409).json({message: "faculty Name already exists"})
-    const newfaculty = await Faculty.create({name: name, code: code})
-    res.status(201).json(newfaculty)
+//GET ALL STUDENTS
+const getAllUsers = async (req, res) => {
+    const users = await User.find({}).populate("faculty department")
+    if (users.length == 0) return res.status(404).json({ message: "No students is in the database "})
+    res.status(200).json({ 
+            data: users,
+            sucess: true,
+            message: "successful"
 
-}
-    const createdept = async (req, res) =>{
-    const { name, faculty, code } = req.body
-
-    const dept = await Department.findOne({ name: name  })
-    if (dept) return res.status(409).json({message: "department Name already exists"})
-
+        })
+    }
+//GET A SINGLE STUDENT BY REG NO
+const getMyUser = async (req, res) =>{
+    const { regNo } = req.params
+    const user = await User.findOne({ regNo: regNo }).populate("faculty department")
     
-    const targetfaculty = await Faculty.findOne({ name: faculty })
-    if (!targetfaculty) return res.status(409).json({message: "faculty doesn't already exists"})
+    if (!user) return res.status(404).json({message: `User with regNo: ${regNo}  not found!`})
+    res.status(200).json({ 
+            user: {
+                id: user._id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                regNo: user.regNo,
 
-    const newdept = await Department.create({name: name, faculty: targetfaculty._id, code: code})
-    if (!newdept) throw new Error("unable to create new department")
-    res.status(201).json(newdept)
+            },
+            message: "successfull"
+
+        })
 }
-
 
 
 module.exports = {
     signup,
     login,
-    createfaculty,
-    createdept
+    getAllUsers,
+    getMyUser
 }

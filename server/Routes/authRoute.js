@@ -1,15 +1,14 @@
 const express = require('express');
-const { signup, login, createfaculty, createdept } = require('../controllers/authControllers');
+const { signup, login, getMyUser, getAllUsers } = require('../controllers/authControllers');
+const authenticate = require('../middleware/auth');
 const router = express.Router();
 
 
 //sign up
 router.post('/register', signup)
-
-//login
 router.post('/login', login)
-router.post('/fac', createfaculty)
-router.post('/dept', createdept)
+router.get('/me',authenticate, getMyUser)
+router.get('/all',authenticate, getAllUsers)
 
 
 
