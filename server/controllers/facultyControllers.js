@@ -1,3 +1,4 @@
+const { request } = require('express')
 const Faculty = require('../models/FacultyModel')
 
 
@@ -26,7 +27,8 @@ const getMyFaculty = async (req,res) =>{
 
 const createFaculty = async (req, res) =>{
     try {
-        const faculty = await Faculty.findOne(req.body.name)
+        const { name } = req.body
+        const faculty = await Faculty.findOne({name})
         if (faculty) return res.status(409).json({ message: "faculty already exist"})
         
 

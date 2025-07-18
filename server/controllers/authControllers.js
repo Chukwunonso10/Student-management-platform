@@ -30,7 +30,7 @@ const signup = async (req, res) =>{
             lastName, 
             password: hashedPassword, 
             email, 
-            regNo: role === "student" ? regNo : null,
+            regNo,
             department: department._id,
             faculty: faculty._id
             })
@@ -46,6 +46,7 @@ const signup = async (req, res) =>{
                 lastName: user.lastName,
                 email: user.email,
                 regNo: user.regNo,
+                role: user.role || "student"
 
             },
             message: "user successfully created"
@@ -80,6 +81,7 @@ const login = async (req, res) =>{
                 lastName: user.lastName,
                 email: email,
                 regNo: user.regNo,
+                role: user.role || "student"
             },
             message: "user successfully created"
         })

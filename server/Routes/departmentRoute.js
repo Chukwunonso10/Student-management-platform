@@ -7,7 +7,7 @@ const authenticate = require('../middleware/auth');
 
 router.get('/all',authenticate, getAllDeparments);
 router.get('/me:id', authenticate, getMyDeparment);
-router.post('/', authenticate, createDepartment);
+router.post('/', createDepartment);
 router.put('/:id', authenticate, updateDepartment);
 router.delete('/:id', authenticate, deleteDepartment);
 

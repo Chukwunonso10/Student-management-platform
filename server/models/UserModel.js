@@ -27,7 +27,7 @@ const UserSchema = new mongoose.Schema({
     department: {type: mongoose.Schema.Types.ObjectId, ref: "Department", required: function () {
                                                                             this.role === "lecturer"
     }},
-    role: {type: String, enum: ["student", "Admin","Lecturer"], default: "student", lowercase: true},
+    role: {type: String, enum: ["student", "Admin","Lecturer"], default: "student"},
     regNo: {type: String, required: function () {
                                         return this.role === "student"
     }, unique: true},

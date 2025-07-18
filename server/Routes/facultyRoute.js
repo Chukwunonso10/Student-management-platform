@@ -10,7 +10,7 @@ router.get("/all",authenticate, getAllFaculty)
 router.get("/me/:id",authenticate, getMyFaculty)
 router.get("/:id",authenticate, deleteFaculty)
 router.get("/:id", authenticate,updateFaculty)
-router.post("/", authenticate,createFaculty)
+router.post("/", createFaculty)
 
 
 module.exports = router;

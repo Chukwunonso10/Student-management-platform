@@ -7,8 +7,8 @@ const router = express.Router();
 //sign up
 router.post('/register', signup)
 router.post('/login', login)
-router.get('/me',authenticate, getMyUser)
-router.get('/all',authenticate, getAllUsers)
+router.get('/me', getMyUser)
+router.get('/all', getAllUsers)
 
 
 

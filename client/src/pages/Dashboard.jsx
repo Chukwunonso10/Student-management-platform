@@ -1,12 +1,10 @@
 // src/pages/Dashboard.jsx
 import { useContext } from 'react';
-import { AuthContext } from '@/context/AuthContext';
+import { AuthContext } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 
-export default function AdminDashboard() {
+export default function Dashboard() {
   const { user } = useContext(AuthContext);
-
-  if(!user) return <p>loading</p>
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -16,7 +14,7 @@ export default function AdminDashboard() {
           <>
             <p className="mb-4">Welcome, <span className="font-semibold">{user.lastName}</span>!</p>
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-              <Link to="/student" className="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-xl shadow">
+              <Link to="/student-dashboard" className="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-xl shadow">
                 🎓 Student Portal
               </Link>
               <Link to="/admin-dashboard" className="bg-green-600 hover:bg-green-700 text-white p-4 rounded-xl shadow">
@@ -29,19 +27,6 @@ export default function AdminDashboard() {
                 📚 Course Management
               </Link>
             </div>
-            <p className="text-lg mb-6">Admin Dashboard - Manage system operations</p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Link to="/admin/manage-students" className="bg-blue-500 hover:bg-blue-600 text-white p-4 rounded shadow">
-          Manage Students
-        </Link>
-        <Link to="/admin/manage-lecturers" className="bg-green-500 hover:bg-green-600 text-white p-4 rounded shadow">
-          Manage Lecturers
-        </Link>
-        <Link to="/profile" className="bg-purple-500 hover:bg-purple-600 text-white p-4 rounded shadow">
-          View Profile
-        </Link>
-      </div>
           </>
         ) : (
           <p>Please login to access your dashboard.</p>
