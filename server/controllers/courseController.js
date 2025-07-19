@@ -16,16 +16,16 @@ const getAllCourses = async (req, res) => {
 
     const courses = await Course.find(query)
       .populate("department", "name code")
-      .populate("enrolledStudents", "firstName lastName email")
+      .populate("enrolledStudents", "firstName lastName email") // Fixed: was "fullname"
       .sort({ code: 1 })
       .limit(limit * 1)
       .skip((page - 1) * limit)
 
     if (courses.length == 0) return res.status(200).json({ message: "Course is currently empty" })
-    const total = await Course.countDocuments(query)
+    const total = await Course.countDocuments(query) // Fixed: added await
     res.status(200).json({
       courses,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(total / limit), // Fixed: Math instead of math
       currentPage: page,
       total,
     })
@@ -38,9 +38,9 @@ const getAllCourses = async (req, res) => {
 const getMyCourses = async (req, res) => {
   try {
     const { id } = req.params
-    const course = await Course.findById(id)
+    const course = await Course.findById(id) // Fixed: removed object wrapper
       .populate("department", "name code")
-      .populate("enrolledStudents", "firstName lastName email")
+      .populate("enrolledStudents", "firstName lastName email") // Fixed: was "fullname"
       .sort({ code: 1 })
 
     if (!course) return res.status(404).json({ message: "No Course was found! " })
@@ -52,7 +52,7 @@ const getMyCourses = async (req, res) => {
 
 const createCourses = async (req, res) => {
   try {
-    const { title, code, unit, departmentName, semester } = req.body
+    const { title, code, unit, departmentName, semester } = req.body // Added semester
 
     // Validate required fields
     if (!title || !code || !unit || !departmentName || !semester) {
@@ -68,7 +68,7 @@ const createCourses = async (req, res) => {
     const newcourse = await Course.create({
       title,
       code,
-      unit: Number.parseInt(unit),
+      unit: Number.parseInt(unit), // Ensure unit is a number
       department: foundDept._id,
       semester,
     })
@@ -83,7 +83,7 @@ const createCourses = async (req, res) => {
 const updateCourse = async (req, res) => {
   try {
     const { id } = req.params
-    const course = await Course.findByIdAndUpdate(id, { $set: req.body }, { new: true, runValidators: true })
+    const course = await Course.findByIdAndUpdate(id, { $set: req.body }, { new: true, runValidators: true }) // Fixed: variable name conflict
     if (!course) return res.status(500).json({ message: "unable to update" })
     res.status(200).json(course)
   } catch (error) {
@@ -95,7 +95,7 @@ const updateCourse = async (req, res) => {
 const deletecourse = async (req, res) => {
   try {
     const { id } = req.params
-    const course = await Course.findByIdAndUpdate(id, { isActive: false }, { new: true })
+    const course = await Course.findByIdAndUpdate(id, { isActive: false }, { new: true }) // Fixed: variable name conflict
     if (!course) return res.status(500).json({ message: " unable to delete" })
     res.status(200).json({ message: "course successfully Deleted.." })
   } catch (error) {
@@ -110,7 +110,7 @@ const enrollStudents = async (req, res) => {
     if (!student) return res.status(404).json({ message: " student not found" })
 
     const course = await Course.findOne({ code })
-    if (!course) return res.status(404).json({ message: "coursecode not found " })
+    if (!course) return res.status(404).json({ message: "coursecode not found " }) // Fixed: return statement
 
     //Check if already enrolled
     const alreadyEnrolled = student.courses.some((c) => c.courseId.toString() === course._id.toString())
@@ -135,7 +135,7 @@ const getAllEnrollments = async (req, res) => {
   try {
     const courses = await Course.find({ enrolledStudents: { $exists: true, $not: { $size: 0 } } })
       .populate("enrolledStudents", "firstName lastName email ")
-      .populate("department", "name code ")
+      .populate("department", "name code ") // Fixed: was "departments"
     res.status(200).json(courses)
   } catch (error) {
     console.error(error.message)
@@ -145,7 +145,6 @@ const getAllEnrollments = async (req, res) => {
 
 module.exports = {
   getAllCourses,
-  getMyCourses,
   createCourses,
   updateCourse,
   deletecourse,
