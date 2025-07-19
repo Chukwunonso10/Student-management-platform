@@ -1,17 +1,10 @@
 const express = require("express")
 const path = require("path")
-const authRoute = require("./Routes/authRoute")
 const ConnectDB = require("./config/db")
 const dotenv = require("dotenv")
 const cors = require("cors")
-const courseRoute = require("./Routes/courseRoute")
-const departmentRoute = require("./Routes/departmentRoute")
-const facultyRoute = require("./Routes/facultyRoute")
-const lecturerRoute = require("./Routes/lecturerRoute")
-const healthRoute = require("./Routes/healthRoute")
-const setupRoute = require("./Routes/setupRoute")
 
-// Load environment variables
+// Load environment variables first
 dotenv.config()
 
 // Validate required environment variables
@@ -34,9 +27,9 @@ const app = express()
 app.use(express.json({ limit: "10mb" }))
 app.use(express.urlencoded({ extended: true, limit: "10mb" }))
 
-// CORS configuration - Allow all origins for now to debug
+// CORS configuration
 const corsOptions = {
-  origin: true, // Allow all origins temporarily
+  origin: true, // Allow all origins
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
@@ -55,6 +48,65 @@ app.use((req, res, next) => {
   }
   next()
 })
+
+// Import routes after middleware setup
+let authRoute, facultyRoute, departmentRoute, courseRoute, lecturerRoute, healthRoute, setupRoute
+
+try {
+  authRoute = require("./Routes/authRoute")
+  console.log("✅ Auth route loaded")
+} catch (error) {
+  console.error("❌ Failed to load auth route:", error.message)
+  process.exit(1)
+}
+
+try {
+  facultyRoute = require("./Routes/facultyRoute")
+  console.log("✅ Faculty route loaded")
+} catch (error) {
+  console.error("❌ Failed to load faculty route:", error.message)
+  process.exit(1)
+}
+
+try {
+  departmentRoute = require("./Routes/departmentRoute")
+  console.log("✅ Department route loaded")
+} catch (error) {
+  console.error("❌ Failed to load department route:", error.message)
+  process.exit(1)
+}
+
+try {
+  courseRoute = require("./Routes/courseRoute")
+  console.log("✅ Course route loaded")
+} catch (error) {
+  console.error("❌ Failed to load course route:", error.message)
+  process.exit(1)
+}
+
+try {
+  lecturerRoute = require("./Routes/lecturerRoute")
+  console.log("✅ Lecturer route loaded")
+} catch (error) {
+  console.error("❌ Failed to load lecturer route:", error.message)
+  process.exit(1)
+}
+
+try {
+  healthRoute = require("./Routes/healthRoute")
+  console.log("✅ Health route loaded")
+} catch (error) {
+  console.error("❌ Failed to load health route:", error.message)
+  process.exit(1)
+}
+
+try {
+  setupRoute = require("./Routes/setupRoute")
+  console.log("✅ Setup route loaded")
+} catch (error) {
+  console.error("❌ Failed to load setup route:", error.message)
+  process.exit(1)
+}
 
 // Health check route (should be first)
 app.use("/api/health", healthRoute)
