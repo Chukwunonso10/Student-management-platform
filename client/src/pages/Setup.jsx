@@ -27,8 +27,10 @@ export default function Setup() {
     departments: 0,
     users: 0,
     isEmpty: true,
+    dbConnected: false,
   })
   const [statusLoading, setStatusLoading] = useState(true)
+  const [debugInfo, setDebugInfo] = useState(null)
 
   useEffect(() => {
     checkSystemStatus()
@@ -43,8 +45,15 @@ export default function Setup() {
       console.log("System status response:", response.data)
 
       setSystemStatus(response.data.data)
+      setDebugInfo(response.data.debug)
     } catch (error) {
       console.error("Error checking system status:", error)
+      setDebugInfo({
+        error: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      })
+
       // Fallback to individual API calls
       try {
         const [facultiesRes, departmentsRes, usersRes] = await Promise.allSettled([
@@ -62,6 +71,7 @@ export default function Setup() {
           departments,
           users,
           isEmpty: faculties === 0 && departments === 0 && users === 0,
+          dbConnected: false,
         })
       } catch (fallbackError) {
         console.error("Fallback status check failed:", fallbackError)
@@ -69,6 +79,27 @@ export default function Setup() {
       }
     } finally {
       setStatusLoading(false)
+    }
+  }
+
+  const testDatabaseConnection = async () => {
+    try {
+      setLoading(true)
+      console.log("Testing database connection...")
+
+      const response = await api.get("/setup/test-db")
+      console.log("Database test response:", response.data)
+
+      if (response.data.status === "success") {
+        toast.success("Database connection is working!")
+      } else {
+        toast.error("Database connection failed")
+      }
+    } catch (error) {
+      console.error("Database test failed:", error)
+      toast.error("Database connection test failed: " + (error.response?.data?.message || error.message))
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -80,24 +111,67 @@ export default function Setup() {
       const response = await api.post("/setup/initialize")
       console.log("Initialize response:", response.data)
 
-      toast.success("System initialized successfully!")
-      toast.success("Default admin created: admin@university.com / admin123")
+      if (response.data.status === "success") {
+        toast.success("System initialized successfully!")
+        toast.success("Default admin created: admin@university.com / admin123")
 
-      // Refresh status
-      await checkSystemStatus()
+        // Refresh status
+        await checkSystemStatus()
 
-      // Show success message with next steps
-      setTimeout(() => {
-        toast.success("You can now register users or login with the admin account!")
-      }, 2000)
+        // Show success message with next steps
+        setTimeout(() => {
+          toast.success("You can now register users or login with the admin account!")
+        }, 2000)
+      } else {
+        toast.error("Initialization failed: " + response.data.message)
+      }
     } catch (error) {
       console.error("Error initializing system:", error)
 
+      const errorMessage = error.response?.data?.message || error.message
+      const errorDetails = error.response?.data?.error || ""
+
       if (error.response?.status === 400) {
         toast.error("System already initialized")
+      } else if (errorMessage.includes("MONGO_URI")) {
+        toast.error("Database connection not configured. Check environment variables.")
+      } else if (errorMessage.includes("Database connection failed")) {
+        toast.error("Cannot connect to database. Check MongoDB Atlas configuration.")
       } else {
-        toast.error(error.response?.data?.message || "Failed to initialize system")
+        toast.error("Initialization failed: " + errorMessage)
+        if (errorDetails) {
+          console.error("Error details:", errorDetails)
+        }
       }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const resetSystem = async () => {
+    if (!confirm("⚠️ WARNING: This will delete ALL data! Are you sure?")) {
+      return
+    }
+
+    setLoading(true)
+    try {
+      const response = await api.post(
+        "/setup/reset",
+        {},
+        {
+          headers: {
+            "x-reset-confirm": "yes-delete-all-data",
+          },
+        },
+      )
+
+      if (response.data.status === "success") {
+        toast.success("System reset completed")
+        await checkSystemStatus()
+      }
+    } catch (error) {
+      console.error("Reset failed:", error)
+      toast.error("Reset failed: " + (error.response?.data?.message || error.message))
     } finally {
       setLoading(false)
     }
@@ -207,6 +281,16 @@ export default function Setup() {
               </div>
             </div>
 
+            {/* Database Connection Status */}
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Database Connection:</span>
+                <span className={`text-sm font-bold ${systemStatus.dbConnected ? "text-green-600" : "text-red-600"}`}>
+                  {systemStatus.dbConnected ? "✅ Connected" : "❌ Disconnected"}
+                </span>
+              </div>
+            </div>
+
             {systemStatus.isEmpty && (
               <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
                 <p className="text-amber-800 text-sm">
@@ -224,30 +308,58 @@ export default function Setup() {
                 </p>
               </div>
             )}
+
+            {/* Debug Information */}
+            {debugInfo && (
+              <div className="mt-4 p-4 bg-gray-100 rounded-lg">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Debug Information:</h4>
+                <div className="text-xs text-gray-600 space-y-1">
+                  <div>MongoDB URI: {debugInfo.mongoUri || "Not configured"}</div>
+                  <div>JWT Secret: {debugInfo.jwtSign || "Not configured"}</div>
+                  <div>Environment: {debugInfo.nodeEnv || "Not set"}</div>
+                  <div>Port: {debugInfo.port || "Not set"}</div>
+                  {debugInfo.error && <div className="text-red-600">Error: {debugInfo.error}</div>}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Quick Setup */}
-        <div className="text-center">
-          <Button onClick={initializeSystem} disabled={loading || !systemStatus.isEmpty} size="lg" className="mb-4">
-            {loading ? "Initializing..." : "🚀 Quick Setup - Initialize System"}
-          </Button>
-          <p className="text-sm text-gray-500">This will create 4 faculties, 9 departments, and a default admin user</p>
-          <div className="mt-4 space-x-2">
+        {/* Action Buttons */}
+        <div className="text-center space-y-4">
+          <div className="space-x-2">
+            <Button onClick={testDatabaseConnection} disabled={loading} variant="outline" size="sm">
+              {loading ? "Testing..." : "🔍 Test Database Connection"}
+            </Button>
             <Button variant="outline" onClick={checkSystemStatus} disabled={loading} size="sm">
               🔄 Refresh Status
             </Button>
-            {!systemStatus.isEmpty && (
-              <>
-                <Button variant="outline" onClick={() => (window.location.href = "/register")} size="sm">
-                  👤 Register User
-                </Button>
-                <Button onClick={() => (window.location.href = "/login")} size="sm">
-                  🚀 Go to Login
-                </Button>
-              </>
-            )}
           </div>
+
+          <div>
+            <Button onClick={initializeSystem} disabled={loading || !systemStatus.isEmpty} size="lg" className="mb-4">
+              {loading ? "Initializing..." : "🚀 Quick Setup - Initialize System"}
+            </Button>
+            <p className="text-sm text-gray-500">
+              This will create 4 faculties, 9 departments, and a default admin user
+            </p>
+          </div>
+
+          {!systemStatus.isEmpty && (
+            <div className="space-x-2">
+              <Button variant="outline" onClick={() => (window.location.href = "/register")} size="sm">
+                👤 Register User
+              </Button>
+              <Button onClick={() => (window.location.href = "/login")} size="sm">
+                🚀 Go to Login
+              </Button>
+              {process.env.NODE_ENV !== "production" && (
+                <Button variant="destructive" onClick={resetSystem} disabled={loading} size="sm">
+                  🗑️ Reset System
+                </Button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Manual Creation Forms - Only show if system is not empty */}
