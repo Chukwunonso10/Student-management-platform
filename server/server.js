@@ -9,6 +9,8 @@ const facultyRoute = require('./Routes/facultyRoute')
 const lecturerRoute = require("./Routes/lecturerRoute")
 
 
+
+
 dotenv.config()
 ConnectDB();
 
