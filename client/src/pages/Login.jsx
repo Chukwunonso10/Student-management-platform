@@ -1,85 +1,97 @@
-import { Card, CardTitle, CardHeader, CardContent, CardFooter} from "@/components/ui/card"
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
-import API from '@/services/api'
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 import { Link } from "react-router-dom"
-import { Eye, EyeOff } from 'lucide-react'
-import { useContext } from "react"
-import { AuthContext } from "@/context/AuthContext"
-
-
+import { useAuth } from "../contexts/AuthContext"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { toast } from "sonner"
 
 export default function Login() {
-   
-    const [email, setEmail ] = useState("")
-    const [password, setPassword ] = useState("")
-    const [showPassword, setShowPassword ] = useState(false)
-    const [loading, setLoading ] = useState(false)
-    const navigate = useNavigate()
-    const { user, setUser } = useContext(AuthContext)
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  })
+  const [loading, setLoading] = useState(false)
+  const { login } = useAuth()
 
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setLoading(true)
 
-    const handleLogin = async () =>{
-        if (!password.trim() || !email.trim()) return alert("All fields are Required")
-        setLoading(true)
-        
-        try {
-            const payload = {password, email}
-            const res = await API.post("/auth/login", payload)
-            setUser(res.data.user)
-            localStorage.setItem("token", res.data.token)
-            alert("Login Successful")
-            navigate(res.data?.user?.role === "student" ? "/admin" : "/admin")
-            
+    const result = await login(formData.email, formData.password)
 
-        } catch(error) {
-            alert(error.response?.data?.message || "Login Failed ")
-        }finally{
-            setLoading(false)
-        }
-
-        
-
-        
+    if (result.success) {
+      toast.success("Login successful!")
+    } else {
+      toast.error(result.message)
     }
 
-    return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900">
-            <Card className="w-full max-w-md animate shadow-xl">
-                <CardHeader>
-                    <CardTitle className="text-center text-2xl font-bold">Student Login page</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <Input 
-                    type="email"
-                    placeholder="Email"
-                    value={email}
-                    onChange={(e)=>setEmail(e.target.value)}
-                    />
-                   <div className="relative">
-                     <Input 
-                    type={showPassword ? "text" : "password"}
-                    placeholder="password"
-                    value={password}
-                    onChange={(e)=>setPassword(e.target.value)}
-                    />
-                    <Button variant="ghost" size="18" className="absolute top-2 right-2" onClick={()=>setShowPassword(prev => !prev)}>
-                        {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
-                    </Button>
-                   </div>
+    setLoading(false)
+  }
 
-                </CardContent>
-                <CardFooter className="flex justify-between">
-                    <Button onClick={handleLogin} className="w-full">
-                      { loading ? "Logging In..." : "Login" }
-                    </Button>
-                </CardFooter>
-                <p className="text-sm text-center text-zinc-500 dark:text-zinc-300 mt-4 ">Don't have an Account? 
-                    <Link to="/register" className="text-blue-500 hover:underline">Sign Up</Link>
-                </p>
-            </Card>
-        </div>
-    )
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    })
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold">Sign in to your account</CardTitle>
+            <CardDescription>Enter your credentials to access the student management system</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  Email address
+                </label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="Enter your email"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                  Password
+                </label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="Enter your password"
+                />
+              </div>
+
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Signing in..." : "Sign in"}
+              </Button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600">
+                Don't have an account?{" "}
+                <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
+                  Sign up
+                </Link>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
 }

@@ -5,14 +5,14 @@ const Faculty = require('../models/FacultyModel')
 const getAllDeparments = async (req,res) =>{
     const { facultyId } = req.query
     const query = { isActive: true }  //build the base filter object
-    if (!facultyId) query.facultyId = facultyId
+    if (facultyId) query.faculty = facultyId  // Fixed: was query.facultyId = facultyId
 
     const department = await Department.find(query)
                                             .populate("faculty", "name code")
                                             .populate("HOD", "title firstName lastName" )
                                             .sort({name: 1})
     if (department.length === 0 ) return res.status(200).json({message: "empty array"})
-    res.status(200).json(department, { message: "successful"})
+    res.status(200).json(department) // Fixed: removed extra object wrapper
 }
 
 const getMyDeparment = async (req,res) =>{
@@ -22,8 +22,8 @@ const getMyDeparment = async (req,res) =>{
                                             .populate("faculty", "name code")
                                             .populate("HOD", "title firstName lastName" )
                                             .sort({name: 1})
-    if (!department ) return res.status(200).json({message: "department not found"})
-    res.status(200).json(department, { message: "successful"})    
+    if (!department ) return res.status(404).json({message: "department not found"}) // Fixed: 404 instead of 200
+    res.status(200).json(department) // Fixed: removed extra object wrapper   
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message })
     }                                  
@@ -36,17 +36,17 @@ const createDepartment = async (req, res) =>{
         if (department) return res.status(409).json({ message: "Department already exist"})
         
         const targetfaculty = await Faculty.findOne({ name: faculty })
-        if (!targetfaculty) return res.status(409).json({message: "faculty doesn't already exists"})
+        if (!targetfaculty) return res.status(404).json({message: "faculty doesn't exist"}) // Fixed: 404 and message
 
         const newDepartment = await Department.create({
             name: name,
             code: code,
             description: description,
-            faculty: faculty._id
+            faculty: targetfaculty._id // Fixed: use targetfaculty instead of faculty
     })
 
     if (!newDepartment) return res.status(500).json({ message: "Error creating department"})
-    res.status(201).json({ message: "successfully created"})
+    res.status(201).json({ message: "successfully created", department: newDepartment }) // Fixed: return created department
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message })
     }
@@ -56,7 +56,7 @@ const createDepartment = async (req, res) =>{
 const deleteDepartment = async (req, res) =>{
     try {
         const { id } = req.params
-        const department = await Department.findByIdAndUpdate({id}, {isActive: false}, {new: true})
+        const department = await Department.findByIdAndUpdate(id, {isActive: false}, {new: true}) // Fixed: removed extra object wrapper
         if (!department) return res.status(404).json({ message: "department not found "})
         res.status(200).json({ message: "Department deleted successfully"})
     } catch (error) {

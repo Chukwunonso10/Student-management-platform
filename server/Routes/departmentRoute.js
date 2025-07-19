@@ -1,14 +1,18 @@
-const express = require('express')
+const express = require("express")
 const router = express.Router()
-const { createDepartment, getAllDeparments, getMyDeparment, deleteDepartment, updateDepartment } = require('../controllers/departmentControllers');
-const authenticate = require('../middleware/auth');
+const {
+  createDepartment,
+  getAllDeparments,
+  getMyDeparment,
+  deleteDepartment,
+  updateDepartment,
+} = require("../controllers/departmentControllers")
+const authenticate = require("../middleware/auth")
 
+router.get("/all",authenticate, getAllDeparments) // Remove authenticate for public access
+router.get("/me:id", authenticate, getMyDeparment)
+router.post("/",authenticate, createDepartment) // Remove authenticate for setup
+router.put("/:id", authenticate, updateDepartment)
+router.delete("/:id", authenticate, deleteDepartment)
 
-
-router.get('/all',authenticate, getAllDeparments);
-router.get('/me:id', authenticate, getMyDeparment);
-router.post('/', createDepartment);
-router.put('/:id', authenticate, updateDepartment);
-router.delete('/:id', authenticate, deleteDepartment);
-
-module.exports = router;
+module.exports = router

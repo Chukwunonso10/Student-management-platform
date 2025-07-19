@@ -12,7 +12,3 @@ router.delete('/:id',authenticate, deleteLecturer)
 
 
 module.exports = router;
-
-
-
-
