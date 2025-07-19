@@ -6,7 +6,6 @@ const Course = require("../models/CourseModel")
 const Lecturer = require("../models/LecturersModel")
 require("dotenv").config()
 
-
 const resetDatabase = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI)
