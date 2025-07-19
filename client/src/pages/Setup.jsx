@@ -1,6 +1,4 @@
-"use client"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { api } from "../services/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -22,6 +20,33 @@ export default function Setup() {
     faculty: "",
   })
   const [loading, setLoading] = useState(false)
+  const [systemStatus, setSystemStatus] = useState({
+    faculties: 0,
+    departments: 0,
+    users: 0,
+  })
+
+  useEffect(() => {
+    checkSystemStatus()
+  }, [])
+
+  const checkSystemStatus = async () => {
+    try {
+      const [facultiesRes, departmentsRes, usersRes] = await Promise.allSettled([
+        api.get("/faculty/all"),
+        api.get("/department/all"),
+        api.get("/auth/all"),
+      ])
+
+      setSystemStatus({
+        faculties: facultiesRes.status === "fulfilled" ? facultiesRes.value.data?.length || 0 : 0,
+        departments: departmentsRes.status === "fulfilled" ? departmentsRes.value.data?.length || 0 : 0,
+        users: usersRes.status === "fulfilled" ? usersRes.value.data?.data?.length || 0 : 0,
+      })
+    } catch (error) {
+      console.error("Error checking system status:", error)
+    }
+  }
 
   const handleCreateFaculty = async (e) => {
     e.preventDefault()
@@ -39,6 +64,7 @@ export default function Setup() {
         contactEmail: "",
         contactPhone: "",
       })
+      checkSystemStatus()
     } catch (error) {
       console.error("Error creating faculty:", error)
       toast.error(error.response?.data?.message || "Failed to create faculty")
@@ -62,6 +88,7 @@ export default function Setup() {
         description: "",
         faculty: "",
       })
+      checkSystemStatus()
     } catch (error) {
       console.error("Error creating department:", error)
       toast.error(error.response?.data?.message || "Failed to create department")
@@ -112,15 +139,35 @@ export default function Setup() {
           contactEmail: "engineering@university.com",
           contactPhone: "+1234567892",
         },
+        {
+          name: "Faculty of Business",
+          code: "BUS",
+          description: "Faculty of Business Administration",
+          contactEmail: "business@university.com",
+          contactPhone: "+1234567893",
+        },
+        {
+          name: "Faculty of Medicine",
+          code: "MED",
+          description: "Faculty of Medicine and Health Sciences",
+          contactEmail: "medicine@university.com",
+          contactPhone: "+1234567894",
+        },
       ]
 
       console.log("Creating faculties...")
+      let facultiesCreated = 0
       for (const faculty of faculties) {
         try {
           const response = await api.post("/faculty/", faculty)
           console.log(`Faculty ${faculty.name} created:`, response.data)
+          facultiesCreated++
         } catch (error) {
           console.log(`Faculty ${faculty.name} error:`, error.response?.data)
+          if (error.response?.status !== 409) {
+            // Don't count conflicts as errors
+            throw error
+          }
         }
       }
 
@@ -129,6 +176,7 @@ export default function Setup() {
 
       // Create sample departments
       const departments = [
+        // Science Faculty
         {
           name: "Computer Science",
           code: "CSC",
@@ -142,6 +190,19 @@ export default function Setup() {
           faculty: "Faculty of Science",
         },
         {
+          name: "Physics",
+          code: "PHY",
+          description: "Department of Physics",
+          faculty: "Faculty of Science",
+        },
+        {
+          name: "Chemistry",
+          code: "CHM",
+          description: "Department of Chemistry",
+          faculty: "Faculty of Science",
+        },
+        // Arts Faculty
+        {
           name: "English Literature",
           code: "ENG",
           description: "Department of English Literature",
@@ -154,6 +215,13 @@ export default function Setup() {
           faculty: "Faculty of Arts",
         },
         {
+          name: "Philosophy",
+          code: "PHI",
+          description: "Department of Philosophy",
+          faculty: "Faculty of Arts",
+        },
+        // Engineering Faculty
+        {
           name: "Civil Engineering",
           code: "CVE",
           description: "Department of Civil Engineering",
@@ -165,47 +233,127 @@ export default function Setup() {
           description: "Department of Electrical Engineering",
           faculty: "Faculty of Engineering",
         },
+        {
+          name: "Mechanical Engineering",
+          code: "MEE",
+          description: "Department of Mechanical Engineering",
+          faculty: "Faculty of Engineering",
+        },
+        // Business Faculty
+        {
+          name: "Business Administration",
+          code: "BBA",
+          description: "Department of Business Administration",
+          faculty: "Faculty of Business",
+        },
+        {
+          name: "Accounting",
+          code: "ACC",
+          description: "Department of Accounting",
+          faculty: "Faculty of Business",
+        },
+        // Medicine Faculty
+        {
+          name: "Medicine",
+          code: "MED",
+          description: "Department of Medicine",
+          faculty: "Faculty of Medicine",
+        },
+        {
+          name: "Nursing",
+          code: "NUR",
+          description: "Department of Nursing",
+          faculty: "Faculty of Medicine",
+        },
       ]
 
       console.log("Creating departments...")
+      let departmentsCreated = 0
       for (const department of departments) {
         try {
           const response = await api.post("/department/", department)
           console.log(`Department ${department.name} created:`, response.data)
+          departmentsCreated++
         } catch (error) {
           console.log(`Department ${department.name} error:`, error.response?.data)
+          if (error.response?.status !== 409) {
+            // Don't count conflicts as errors
+            throw error
+          }
         }
       }
 
-      toast.success("Sample data created successfully!")
+      toast.success(`Sample data created! ${facultiesCreated} faculties and ${departmentsCreated} departments added.`)
+      checkSystemStatus()
     } catch (error) {
       console.error("Error creating sample data:", error)
-      toast.error("Failed to create sample data")
+      toast.error("Failed to create sample data. Please try again.")
     }
     setLoading(false)
   }
+
+  const isSystemEmpty = systemStatus.faculties === 0 && systemStatus.departments === 0 && systemStatus.users === 0
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900">System Setup</h1>
-          <p className="text-gray-600">Create initial faculties and departments</p>
+          <p className="text-gray-600">Initialize your Student Management System</p>
         </div>
 
+        {/* System Status */}
+        <Card>
+          <CardHeader>
+            <CardTitle>System Status</CardTitle>
+            <CardDescription>Current state of your database</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <div className="text-2xl font-bold text-blue-600">{systemStatus.faculties}</div>
+                <div className="text-sm text-blue-800">Faculties</div>
+              </div>
+              <div className="text-center p-4 bg-green-50 rounded-lg">
+                <div className="text-2xl font-bold text-green-600">{systemStatus.departments}</div>
+                <div className="text-sm text-green-800">Departments</div>
+              </div>
+              <div className="text-center p-4 bg-purple-50 rounded-lg">
+                <div className="text-2xl font-bold text-purple-600">{systemStatus.users}</div>
+                <div className="text-sm text-purple-800">Users</div>
+              </div>
+            </div>
+            {isSystemEmpty && (
+              <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-amber-800 text-sm">
+                  <strong>Empty Database Detected:</strong> Your system appears to be new. Use the quick setup below to
+                  get started.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Quick Setup */}
         <div className="text-center">
-          <Button onClick={createSampleData} disabled={loading} size="lg">
-            {loading ? "Creating..." : "Create Sample Data"}
+          <Button onClick={createSampleData} disabled={loading} size="lg" className="mb-4">
+            {loading ? "Creating..." : "🚀 Quick Setup - Create Sample Data"}
           </Button>
-          <p className="text-sm text-gray-500 mt-2">
-            This will create sample faculties and departments to get you started
+          <p className="text-sm text-gray-500">
+            This will create 5 faculties and 14 departments to get you started quickly
           </p>
+          <div className="mt-4">
+            <Button variant="outline" onClick={checkSystemStatus} disabled={loading} size="sm">
+              🔄 Refresh Status
+            </Button>
+          </div>
         </div>
 
+        {/* Manual Creation Forms */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <Card>
             <CardHeader>
-              <CardTitle>Create Faculty</CardTitle>
+              <CardTitle>Create Faculty Manually</CardTitle>
               <CardDescription>Add a new faculty to the system</CardDescription>
             </CardHeader>
             <CardContent>
@@ -276,7 +424,7 @@ export default function Setup() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Create Department</CardTitle>
+              <CardTitle>Create Department Manually</CardTitle>
               <CardDescription>Add a new department to a faculty</CardDescription>
             </CardHeader>
             <CardContent>
@@ -326,22 +474,84 @@ export default function Setup() {
                   />
                 </div>
 
-                <Button type="submit" disabled={loading} className="w-full">
+                <Button type="submit" disabled={loading || systemStatus.faculties === 0} className="w-full">
                   {loading ? "Creating..." : "Create Department"}
                 </Button>
+                {systemStatus.faculties === 0 && (
+                  <p className="text-sm text-amber-600">Create at least one faculty first</p>
+                )}
               </form>
             </CardContent>
           </Card>
         </div>
 
-        <div className="text-center">
-          <p className="text-sm text-gray-500">
-            After creating faculties and departments, you can{" "}
-            <a href="/register" className="text-blue-600 hover:text-blue-500">
-              register users
-            </a>
-          </p>
-        </div>
+        {/* Next Steps */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Next Steps</CardTitle>
+            <CardDescription>What to do after setting up faculties and departments</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex items-center space-x-3">
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                    systemStatus.faculties > 0 ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"
+                  }`}
+                >
+                  {systemStatus.faculties > 0 ? "✓" : "1"}
+                </div>
+                <span className={systemStatus.faculties > 0 ? "text-green-800" : "text-gray-600"}>
+                  Create Faculties ({systemStatus.faculties} created)
+                </span>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                    systemStatus.departments > 0 ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"
+                  }`}
+                >
+                  {systemStatus.departments > 0 ? "✓" : "2"}
+                </div>
+                <span className={systemStatus.departments > 0 ? "text-green-800" : "text-gray-600"}>
+                  Create Departments ({systemStatus.departments} created)
+                </span>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                    systemStatus.users > 0 ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"
+                  }`}
+                >
+                  {systemStatus.users > 0 ? "✓" : "3"}
+                </div>
+                <span className={systemStatus.users > 0 ? "text-green-800" : "text-gray-600"}>
+                  Register Admin User ({systemStatus.users} users)
+                </span>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                <div className="w-6 h-6 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xs font-bold">
+                  4
+                </div>
+                <span className="text-gray-600">Start using the system</span>
+              </div>
+            </div>
+
+            <div className="mt-6 flex space-x-3">
+              {systemStatus.faculties > 0 && systemStatus.departments > 0 && (
+                <Button onClick={() => (window.location.href = "/register")} variant="outline">
+                  👤 Register Admin User
+                </Button>
+              )}
+              {systemStatus.users > 0 && (
+                <Button onClick={() => (window.location.href = "/login")}>🚀 Go to Login</Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

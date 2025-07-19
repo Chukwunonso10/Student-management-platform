@@ -4,7 +4,9 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "seed": "node scripts/seedDatabase.js",
+    "reset-db": "node scripts/resetDatabase.js"
   },
   "keywords": [],
   "author": "",
