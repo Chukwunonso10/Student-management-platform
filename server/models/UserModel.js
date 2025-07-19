@@ -57,15 +57,15 @@ const UserSchema = new mongoose.Schema(
   { timestamps: true },
 )
 
-// Create a compound index that allows multiple null values for non-students
-UserSchema.index(
-  { regNo: 1 },
-  {
-    unique: true,
-    sparse: true, // This is crucial - allows multiple documents with missing regNo field
-    partialFilterExpression: { regNo: { $exists: true, $ne: null } }, // Only enforce uniqueness when regNo exists and is not null
-  },
-)
+// // Create a compound index that allows multiple null values for non-students
+// UserSchema.index(
+//   { regNo: 1 },
+//   {
+//     unique: true,
+//     sparse: true, // This is crucial - allows multiple documents with missing regNo field
+//     partialFilterExpression: { regNo: { $exists: true, $ne: null } }, // Only enforce uniqueness when regNo exists and is not null
+//   },
+// )
 
 const User = mongoose.model("User", UserSchema)
 module.exports = User
