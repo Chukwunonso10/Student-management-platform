@@ -17,11 +17,12 @@ export default function Register() {
     password: "",
     facultyName: "",
     departmentName: "",
-    role: "student", // Add this line
+    role: "student",
   })
   const [faculties, setFaculties] = useState([])
   const [departments, setDepartments] = useState([])
   const [loading, setLoading] = useState(false)
+  const [dataLoading, setDataLoading] = useState(true)
   const { register } = useAuth()
 
   useEffect(() => {
@@ -29,7 +30,7 @@ export default function Register() {
   }, [])
 
   useEffect(() => {
-    if (formData.facultyName) {
+    if (formData.facultyName && faculties.length > 0) {
       fetchDepartments()
     } else {
       setDepartments([])
@@ -39,20 +40,32 @@ export default function Register() {
 
   const fetchFaculties = async () => {
     try {
+      setDataLoading(true)
       const response = await api.get("/faculty/all")
-      setFaculties(response.data)
+      // Ensure we always have an array
+      const facultyData = Array.isArray(response.data) ? response.data : []
+      setFaculties(facultyData)
     } catch (error) {
       console.error("Error fetching faculties:", error)
+      setFaculties([])
+      if (error.response?.status !== 401) {
+        toast.error("Failed to load faculties. Please refresh the page.")
+      }
+    } finally {
+      setDataLoading(false)
     }
   }
 
   const fetchDepartments = async () => {
     try {
       const response = await api.get("/department/all")
+      // Ensure we always have an array
+      const departmentData = Array.isArray(response.data) ? response.data : []
+
       // Filter departments by selected faculty
       const selectedFaculty = faculties.find((f) => f.name === formData.facultyName)
       if (selectedFaculty) {
-        const filteredDepts = response.data.filter((dept) => dept.faculty && dept.faculty._id === selectedFaculty._id)
+        const filteredDepts = departmentData.filter((dept) => dept.faculty && dept.faculty._id === selectedFaculty._id)
         setDepartments(filteredDepts)
       } else {
         setDepartments([])
@@ -60,6 +73,9 @@ export default function Register() {
     } catch (error) {
       console.error("Error fetching departments:", error)
       setDepartments([])
+      if (error.response?.status !== 401) {
+        toast.error("Failed to load departments")
+      }
     }
   }
 
@@ -88,13 +104,24 @@ export default function Register() {
     })
   }
 
+  if (dataLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading registration form...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <Card>
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">Create your account</CardTitle>
-            <CardDescription>Register as a new student in the management system</CardDescription>
+            <CardDescription>Register as a new user in the management system</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -173,12 +200,22 @@ export default function Register() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select Faculty</option>
-                  {faculties.map((faculty) => (
-                    <option key={faculty._id} value={faculty.name}>
-                      {faculty.name}
-                    </option>
-                  ))}
+                  {Array.isArray(faculties) &&
+                    faculties.map((faculty) => (
+                      <option key={faculty._id} value={faculty.name}>
+                        {faculty.name}
+                      </option>
+                    ))}
                 </select>
+                {faculties.length === 0 && (
+                  <p className="text-sm text-red-600 mt-1">
+                    No faculties available. Please{" "}
+                    <Link to="/setup" className="underline">
+                      create some faculties first
+                    </Link>
+                    .
+                  </p>
+                )}
               </div>
 
               <div>
@@ -195,12 +232,16 @@ export default function Register() {
                   disabled={!formData.facultyName}
                 >
                   <option value="">Select Department</option>
-                  {departments.map((department) => (
-                    <option key={department._id} value={department.name}>
-                      {department.name}
-                    </option>
-                  ))}
+                  {Array.isArray(departments) &&
+                    departments.map((department) => (
+                      <option key={department._id} value={department.name}>
+                        {department.name}
+                      </option>
+                    ))}
                 </select>
+                {formData.facultyName && departments.length === 0 && (
+                  <p className="text-sm text-amber-600 mt-1">No departments available for this faculty.</p>
+                )}
               </div>
 
               <div>
@@ -221,7 +262,7 @@ export default function Register() {
                 </select>
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full" disabled={loading || faculties.length === 0}>
                 {loading ? "Creating account..." : "Create account"}
               </Button>
             </form>

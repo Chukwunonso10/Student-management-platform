@@ -1,10 +1,11 @@
 import axios from "axios"
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL_PRODUCTION || "http://localhost:5000/api",
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
   headers: {
     "Content-Type": "application/json",
   },
+  timeout: 10000, // 10 second timeout
 })
 
 // Add token to requests if available
@@ -16,7 +17,7 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// Handle token expiration
+// Handle token expiration and network errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -24,6 +25,8 @@ api.interceptors.response.use(
       localStorage.removeItem("token")
       localStorage.removeItem("user")
       window.location.href = "/login"
+    } else if (error.code === "NETWORK_ERROR" || error.code === "ECONNABORTED") {
+      console.error("Network error:", error.message)
     }
     return Promise.reject(error)
   },
