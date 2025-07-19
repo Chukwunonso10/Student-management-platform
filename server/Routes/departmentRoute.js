@@ -9,7 +9,7 @@ const {
 } = require("../controllers/departmentControllers")
 const authenticate = require("../middleware/auth")
 
-router.get("/all",authenticate, getAllDeparments) // Remove authenticate for public access
+router.get("/all", getAllDeparments) // Remove authenticate for public access
 router.get("/me:id", authenticate, getMyDeparment)
 router.post("/",authenticate, createDepartment) // Remove authenticate for setup
 router.put("/:id", authenticate, updateDepartment)

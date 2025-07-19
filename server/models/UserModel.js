@@ -31,7 +31,7 @@ const UserSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Department",
       required: function () {
-        return this.role === "lecturer" || this.role === "student" || this.role === "Admin" // Fixed: make required for all roles
+        return this.role === "lecturer" || this.role === "student" || this.role === "Admin"
       },
     },
     role: { type: String, enum: ["student", "Admin", "Lecturer"], default: "student" },
@@ -41,19 +41,30 @@ const UserSchema = new mongoose.Schema(
         return this.role === "student"
       },
       unique: true,
-      sparse: true,
-    }, // Added sparse: true to allow null values
+      sparse: true, // This allows multiple null values
+      default: undefined, // Use undefined instead of null
+    },
     yearOfStudy: {
       type: Number,
       required: function () {
         return this.role === "student"
       },
       default: function () {
-        return this.role === "student" ? new Date().getFullYear() : null
+        return this.role === "student" ? new Date().getFullYear() : undefined
       },
     },
   },
   { timestamps: true },
+)
+
+// Create a compound index that allows multiple null values for non-students
+UserSchema.index(
+  { regNo: 1 },
+  {
+    unique: true,
+    sparse: true, // This is crucial - allows multiple documents with missing regNo field
+    partialFilterExpression: { regNo: { $exists: true, $ne: null } }, // Only enforce uniqueness when regNo exists and is not null
+  },
 )
 
 const User = mongoose.model("User", UserSchema)
