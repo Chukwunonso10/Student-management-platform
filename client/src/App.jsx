@@ -42,9 +42,10 @@ function PublicRoute({ children }) {
 
 function App() {
   return (
+    
     <AuthProvider>
       <Router>
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50" >
           <Routes>
             <Route path="/setup" element={<Setup />} />
             <Route

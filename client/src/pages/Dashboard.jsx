@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { useAuth } from "../contexts/AuthContext"
 import { useNavigate } from "react-router-dom"
@@ -88,7 +86,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6  text-white bg-gray-100">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">
           {getWelcomeMessage()}, {user?.firstName}!

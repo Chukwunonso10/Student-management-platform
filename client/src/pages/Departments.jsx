@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { Link } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
 import { api } from "../services/api"
 import { Button } from "@/components/ui/button"
@@ -6,198 +7,215 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
 
-export default function Departments() {
-  const { user } = useAuth()
-  const [departments, setDepartments] = useState([])
-  const [faculties, setFaculties] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [showCreateForm, setShowCreateForm] = useState(false)
+export default function Register() {
   const [formData, setFormData] = useState({
-    name: "",
-    code: "",
-    description: "",
-    faculty: "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    facultyName: "",
+    departmentName: "",
   })
+  const [faculties, setFaculties] = useState([])
+  const [departments, setDepartments] = useState([])
+  const [loading, setLoading] = useState(false)
+  const { register } = useAuth()
 
   useEffect(() => {
-    fetchDepartments()
     fetchFaculties()
   }, [])
 
-  const fetchDepartments = async () => {
-    try {
-      const response = await api.get("/department/all")
-      setDepartments(response.data || [])
-    } catch (error) {
-      console.error("Error fetching departments:", error)
+  useEffect(() => {
+    if (formData.facultyName) {
+      fetchDepartments()
+    } else {
+      setDepartments([])
+      setFormData((prev) => ({ ...prev, departmentName: "" }))
     }
-  }
+  }, [formData.facultyName, faculties])
 
   const fetchFaculties = async () => {
     try {
       const response = await api.get("/faculty/all")
-      setFaculties(response.data || [])
+      setFaculties(response.data)
     } catch (error) {
       console.error("Error fetching faculties:", error)
     }
   }
 
-  const handleCreateDepartment = async (e) => {
+  const fetchDepartments = async () => {
+    try {
+      const response = await api.get("/department/all")
+      // Filter departments by selected faculty
+      const selectedFaculty = faculties.find((f) => f.name === formData.facultyName)
+      if (selectedFaculty) {
+        const filteredDepts = response.data.filter((dept) => dept.faculty && dept.faculty._id === selectedFaculty._id)
+        setDepartments(filteredDepts)
+      } else {
+        setDepartments([])
+      }
+    } catch (error) {
+      console.error("Error fetching departments:", error)
+      setDepartments([])
+    }
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
 
-    try {
-      await api.post("/department/", formData)
-      toast.success("Department created successfully!")
-      setShowCreateForm(false)
-      setFormData({
-        name: "",
-        code: "",
-        description: "",
-        faculty: "",
-      })
-      fetchDepartments()
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to create department")
+    const result = await register(formData)
+
+    if (result.success) {
+      toast.success("Registration successful!")
+    } else {
+      toast.error(result.message)
     }
 
     setLoading(false)
   }
 
   const handleChange = (e) => {
+    const { name, value } = e.target
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
+      // Clear department when faculty changes
+      ...(name === "facultyName" && { departmentName: "" }),
     })
   }
 
-  if (user?.role !== "Admin") {
-    return (
-      <div className="text-center py-8">
-        <p className="text-gray-500">You don't have permission to view this page.</p>
-      </div>
-    )
-  }
-
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Departments</h1>
-          <p className="text-gray-600">Manage department records</p>
-        </div>
-        <Button onClick={() => setShowCreateForm(true)}>Add Department</Button>
-      </div>
-
-      {showCreateForm && (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
         <Card>
-          <CardHeader>
-            <CardTitle>Add New Department</CardTitle>
-            <CardDescription>Create a new department</CardDescription>
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold">Create your account</CardTitle>
+            <CardDescription>Register as a new student in the management system</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleCreateDepartment} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Department Name</label>
+                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                    First Name
+                  </label>
                   <Input
-                    name="name"
+                    id="firstName"
+                    name="firstName"
+                    type="text"
                     required
-                    value={formData.name}
+                    value={formData.firstName}
                     onChange={handleChange}
-                    placeholder="Enter department name"
+                    placeholder="First name"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Department Code</label>
+                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                    Last Name
+                  </label>
                   <Input
-                    name="code"
+                    id="lastName"
+                    name="lastName"
+                    type="text"
                     required
-                    value={formData.code}
+                    value={formData.lastName}
                     onChange={handleChange}
-                    placeholder="Enter department code"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Faculty</label>
-                  <select
-                    name="faculty"
-                    required
-                    value={formData.faculty}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Select Faculty</option>
-                    {faculties.map((faculty) => (
-                      <option key={faculty._id} value={faculty.name}>
-                        {faculty.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                  <textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                    placeholder="Enter department description"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows="3"
+                    placeholder="Last name"
                   />
                 </div>
               </div>
 
-              <div className="flex space-x-2">
-                <Button type="submit" disabled={loading}>
-                  {loading ? "Creating..." : "Create Department"}
-                </Button>
-                <Button type="button" variant="outline" onClick={() => setShowCreateForm(false)}>
-                  Cancel
-                </Button>
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  Email address
+                </label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="Enter your email"
+                />
               </div>
+
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                  Password
+                </label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="Enter your password"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="facultyName" className="block text-sm font-medium text-gray-700 mb-1">
+                  Faculty
+                </label>
+                <select
+                  id="facultyName"
+                  name="facultyName"
+                  required
+                  value={formData.facultyName}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select Faculty</option>
+                  {faculties.map((faculty) => (
+                    <option key={faculty._id} value={faculty.name}>
+                      {faculty.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="departmentName" className="block text-sm font-medium text-gray-700 mb-1">
+                  Department
+                </label>
+                <select
+                  id="departmentName"
+                  name="departmentName"
+                  required
+                  value={formData.departmentName}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={!formData.facultyName}
+                >
+                  <option value="">Select Department</option>
+                  {departments.map((department) => (
+                    <option key={department._id} value={department.name}>
+                      {department.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Creating account..." : "Create account"}
+              </Button>
             </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600">
+                Already have an account?{" "}
+                <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
+                  Sign in
+                </Link>
+              </p>
+            </div>
           </CardContent>
         </Card>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {departments.map((department) => (
-          <Card key={department._id}>
-            <CardHeader>
-              <CardTitle className="text-lg">{department.name}</CardTitle>
-              <CardDescription>{department.code}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {department.faculty && (
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Faculty:</span>
-                    <span className="font-medium text-sm">{department.faculty.name}</span>
-                  </div>
-                )}
-                {department.description && (
-                  <div className="mt-2">
-                    <span className="text-sm text-gray-600">Description:</span>
-                    <p className="text-sm mt-1">{department.description}</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
       </div>
-
-      {departments.length === 0 && (
-        <Card>
-          <CardContent className="text-center py-8">
-            <p className="text-gray-500">No departments available</p>
-          </CardContent>
-        </Card>
-      )}
     </div>
   )
 }

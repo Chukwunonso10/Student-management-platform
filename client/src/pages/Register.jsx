@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
@@ -41,10 +39,13 @@ export default function Register() {
   const fetchFaculties = async () => {
     try {
       setDataLoading(true)
+      console.log("Fetching faculties...")
       const response = await api.get("/faculty/all")
-      // Ensure we always have an array
+      console.log("Faculties response:", response.data)
+
       const facultyData = Array.isArray(response.data) ? response.data : []
       setFaculties(facultyData)
+      console.log("Set faculties:", facultyData)
     } catch (error) {
       console.error("Error fetching faculties:", error)
       setFaculties([])
@@ -58,16 +59,32 @@ export default function Register() {
 
   const fetchDepartments = async () => {
     try {
+      console.log("Fetching departments for faculty:", formData.facultyName)
       const response = await api.get("/department/all")
-      // Ensure we always have an array
+      console.log("Departments response:", response.data)
+
       const departmentData = Array.isArray(response.data) ? response.data : []
 
       // Filter departments by selected faculty
       const selectedFaculty = faculties.find((f) => f.name === formData.facultyName)
+      console.log("Selected faculty:", selectedFaculty)
+
       if (selectedFaculty) {
-        const filteredDepts = departmentData.filter((dept) => dept.faculty && dept.faculty._id === selectedFaculty._id)
+        const filteredDepts = departmentData.filter((dept) => {
+          console.log(
+            "Checking department:",
+            dept.name,
+            "Faculty ID:",
+            dept.faculty?._id,
+            "Selected Faculty ID:",
+            selectedFaculty._id,
+          )
+          return dept.faculty && dept.faculty._id === selectedFaculty._id
+        })
+        console.log("Filtered departments:", filteredDepts)
         setDepartments(filteredDepts)
       } else {
+        console.log("No faculty selected or faculty not found")
         setDepartments([])
       }
     } catch (error) {
@@ -81,7 +98,25 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+
+    // Validation
+    if (!formData.facultyName) {
+      toast.error("Please select a faculty")
+      return
+    }
+
+    if (!formData.departmentName) {
+      toast.error("Please select a department")
+      return
+    }
+
+    if (departments.length === 0) {
+      toast.error("No departments available for the selected faculty")
+      return
+    }
+
     setLoading(true)
+    console.log("Submitting registration:", formData)
 
     const result = await register(formData)
 
@@ -89,6 +124,7 @@ export default function Register() {
       toast.success("Registration successful!")
     } else {
       toast.error(result.message)
+      console.error("Registration failed:", result.message)
     }
 
     setLoading(false)
@@ -188,6 +224,24 @@ export default function Register() {
               </div>
 
               <div>
+                <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+                  Role
+                </label>
+                <select
+                  id="role"
+                  name="role"
+                  required
+                  value={formData.role}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="student">Student</option>
+                  <option value="Admin">Admin</option>
+                  <option value="Lecturer">Lecturer</option>
+                </select>
+              </div>
+
+              <div>
                 <label htmlFor="facultyName" className="block text-sm font-medium text-gray-700 mb-1">
                   Faculty
                 </label>
@@ -203,7 +257,7 @@ export default function Register() {
                   {Array.isArray(faculties) &&
                     faculties.map((faculty) => (
                       <option key={faculty._id} value={faculty.name}>
-                        {faculty.name}
+                        {faculty.name} ({faculty.code})
                       </option>
                     ))}
                 </select>
@@ -235,34 +289,23 @@ export default function Register() {
                   {Array.isArray(departments) &&
                     departments.map((department) => (
                       <option key={department._id} value={department.name}>
-                        {department.name}
+                        {department.name} ({department.code})
                       </option>
                     ))}
                 </select>
                 {formData.facultyName && departments.length === 0 && (
-                  <p className="text-sm text-amber-600 mt-1">No departments available for this faculty.</p>
+                  <p className="text-sm text-amber-600 mt-1">
+                    No departments available for this faculty. Please create departments first.
+                  </p>
                 )}
+                {!formData.facultyName && <p className="text-sm text-gray-500 mt-1">Please select a faculty first</p>}
               </div>
 
-              <div>
-                <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
-                  Role
-                </label>
-                <select
-                  id="role"
-                  name="role"
-                  required
-                  value={formData.role}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="student">Student</option>
-                  <option value="Admin">Admin</option>
-                  <option value="Lecturer">Lecturer</option>
-                </select>
-              </div>
-
-              <Button type="submit" className="w-full" disabled={loading || faculties.length === 0}>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={loading || faculties.length === 0 || (formData.facultyName && departments.length === 0)}
+              >
                 {loading ? "Creating account..." : "Create account"}
               </Button>
             </form>
@@ -275,6 +318,19 @@ export default function Register() {
                 </Link>
               </p>
             </div>
+
+            {/* Debug Info (only in development) */}
+            {import.meta.env.DEV && (
+              <div className="mt-4 p-3 bg-gray-100 rounded text-xs">
+                <p>
+                  <strong>Debug Info:</strong>
+                </p>
+                <p>Faculties: {faculties.length}</p>
+                <p>Departments: {departments.length}</p>
+                <p>Selected Faculty: {formData.facultyName}</p>
+                <p>Selected Department: {formData.departmentName}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
