@@ -1,7 +1,7 @@
 import axios from "axios"
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL|| "https://student-management-platform-70dz.onrender.com/api",
+  baseURL: import.meta.env.VITE_API_BASE_URL|| "https://student-management-platform-1backend.onrender.com/api",
   headers: {
     "Content-Type": "application/json",
   },
