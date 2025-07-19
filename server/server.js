@@ -14,25 +14,6 @@ console.log("  PORT:", process.env.PORT || "❌ Not set")
 console.log("  MONGO_URI:", process.env.MONGO_URI ? "✅ Configured" : "❌ Not configured")
 console.log("  JWT_SIGN:", process.env.JWT_SIGN ? "✅ Configured" : "❌ Not configured")
 
-// Validate required environment variables
-const requiredEnvVars = ["MONGO_URI", "JWT_SIGN"]
-const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar])
-
-if (missingEnvVars.length > 0) {
-  console.error("❌ Missing required environment variables:")
-  missingEnvVars.forEach((envVar) => console.error(`  - ${envVar}`))
-  console.error("")
-  console.error("🔧 SOLUTION: Add these environment variables in Render:")
-  console.error("  1. Go to your Render service dashboard")
-  console.error("  2. Click 'Environment' tab")
-  console.error("  3. Add the missing variables")
-
-  if (process.env.NODE_ENV === "production") {
-    console.error("💥 Exiting due to missing environment variables in production")
-    process.exit(1)
-  }
-}
-
 const app = express()
 
 // Middleware
@@ -44,8 +25,8 @@ const corsOptions = {
   origin: [
     "http://localhost:5173",
     "http://localhost:3000",
-    "https://your-vercel-app.vercel.app", // Replace with your actual Vercel URL
     /\.vercel\.app$/, // Allow all Vercel subdomains
+    /\.onrender\.com$/, // Allow Render domains
   ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -61,12 +42,13 @@ app.use((req, res, next) => {
   next()
 })
 
-// Root route - this was missing!
+// Root route
 app.get("/", (req, res) => {
   res.json({
     message: "🎉 Student Management API is running!",
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || "development",
+    status: "healthy",
     endpoints: {
       health: "/api/health",
       test: "/api/test",
@@ -80,7 +62,7 @@ app.get("/", (req, res) => {
   })
 })
 
-// API root route - this was also missing!
+// API root route
 app.get("/api", (req, res) => {
   res.json({
     message: "🚀 Student Management API",
@@ -91,6 +73,7 @@ app.get("/api", (req, res) => {
       "GET /api/health - Health check",
       "GET /api/test - Test endpoint",
       "GET /api/setup/status - System status",
+      "POST /api/setup/initialize - Initialize system",
       "POST /api/auth/register - User registration",
       "POST /api/auth/login - User login",
       "GET /api/faculty/all - Get all faculties",
@@ -99,82 +82,89 @@ app.get("/api", (req, res) => {
   })
 })
 
-// Test route to verify server is working
+// Test route
 app.get("/api/test", (req, res) => {
   res.json({
     message: "✅ API is working perfectly!",
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || "not-set",
-    expressVersion: require("express/package.json").version,
     envCheck: {
-      mongoUri: process.env.MONGO_URI ? "configured" : "missing",
-      jwtSign: process.env.JWT_SIGN ? "configured" : "missing",
+      mongoUri: process.env.MONGO_URI ? "✅ configured" : "❌ missing",
+      jwtSign: process.env.JWT_SIGN ? "✅ configured" : "❌ missing",
       nodeEnv: process.env.NODE_ENV || "not-set",
       port: process.env.PORT || "not-set",
     },
   })
 })
 
-// Import and use routes with proper error handling
+// Import and use routes with better error handling
 console.log("📦 Loading routes...")
 
+// Health route
 try {
   const healthRoute = require("./Routes/healthRoute")
   app.use("/api/health", healthRoute)
-  console.log("✅ Health route loaded and mounted")
+  console.log("✅ Health route loaded")
 } catch (error) {
   console.error("❌ Failed to load health route:", error.message)
 }
 
+// Setup route - CRITICAL for initialization
 try {
   const setupRoute = require("./Routes/setupRoute")
   app.use("/api/setup", setupRoute)
-  console.log("✅ Setup route loaded and mounted")
+  console.log("✅ Setup route loaded")
 } catch (error) {
-  console.error("❌ Failed to load setup route:", error.message)
+  console.error("❌ CRITICAL: Failed to load setup route:", error.message)
+  console.error("This will prevent system initialization!")
 }
 
+// Auth route
 try {
   const authRoute = require("./Routes/authRoute")
   app.use("/api/auth", authRoute)
-  console.log("✅ Auth route loaded and mounted")
+  console.log("✅ Auth route loaded")
 } catch (error) {
   console.error("❌ Failed to load auth route:", error.message)
 }
 
+// Faculty route
 try {
   const facultyRoute = require("./Routes/facultyRoute")
   app.use("/api/faculty", facultyRoute)
-  console.log("✅ Faculty route loaded and mounted")
+  console.log("✅ Faculty route loaded")
 } catch (error) {
   console.error("❌ Failed to load faculty route:", error.message)
 }
 
+// Department route
 try {
   const departmentRoute = require("./Routes/departmentRoute")
   app.use("/api/department", departmentRoute)
-  console.log("✅ Department route loaded and mounted")
+  console.log("✅ Department route loaded")
 } catch (error) {
   console.error("❌ Failed to load department route:", error.message)
 }
 
+// Course route
 try {
   const courseRoute = require("./Routes/courseRoute")
   app.use("/api/course", courseRoute)
-  console.log("✅ Course route loaded and mounted")
+  console.log("✅ Course route loaded")
 } catch (error) {
   console.error("❌ Failed to load course route:", error.message)
 }
 
+// Lecturer route
 try {
   const lecturerRoute = require("./Routes/lecturerRoute")
   app.use("/api/lecturer", lecturerRoute)
-  console.log("✅ Lecturer route loaded and mounted")
+  console.log("✅ Lecturer route loaded")
 } catch (error) {
   console.error("❌ Failed to load lecturer route:", error.message)
 }
 
-console.log("✅ All routes loaded successfully!")
+console.log("✅ Route loading completed!")
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -216,15 +206,11 @@ const startServer = async () => {
   } catch (error) {
     console.error("❌ Failed to start server:", error.message)
 
-    // Don't exit in production, try to start server anyway
-    if (process.env.NODE_ENV !== "production") {
-      process.exit(1)
-    } else {
-      console.log("⚠️ Starting server without database connection...")
-      app.listen(PORT, "0.0.0.0", () => {
-        console.log(`⚠️ Server running on port ${PORT} (without database)`)
-      })
-    }
+    // In production, try to start server anyway for debugging
+    console.log("⚠️ Starting server without database connection for debugging...")
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`⚠️ Server running on port ${PORT} (database connection failed)`)
+    })
   }
 }
 
