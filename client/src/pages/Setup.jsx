@@ -26,11 +26,7 @@ export default function Setup() {
     faculties: 0,
     departments: 0,
     users: 0,
-    isEmpty: true,
-    dbConnected: false,
   })
-  const [statusLoading, setStatusLoading] = useState(true)
-  const [debugInfo, setDebugInfo] = useState(null)
 
   useEffect(() => {
     checkSystemStatus()
@@ -38,142 +34,19 @@ export default function Setup() {
 
   const checkSystemStatus = async () => {
     try {
-      setStatusLoading(true)
-      console.log("Checking system status...")
+      const [facultiesRes, departmentsRes, usersRes] = await Promise.allSettled([
+        api.get("/faculty/all"),
+        api.get("/department/all"),
+        api.get("/auth/all"),
+      ])
 
-      const response = await api.get("/setup/status")
-      console.log("System status response:", response.data)
-
-      setSystemStatus(response.data.data)
-      setDebugInfo(response.data.debug)
+      setSystemStatus({
+        faculties: facultiesRes.status === "fulfilled" ? facultiesRes.value.data?.length || 0 : 0,
+        departments: departmentsRes.status === "fulfilled" ? departmentsRes.value.data?.length || 0 : 0,
+        users: usersRes.status === "fulfilled" ? usersRes.value.data?.data?.length || 0 : 0,
+      })
     } catch (error) {
       console.error("Error checking system status:", error)
-      setDebugInfo({
-        error: error.message,
-        status: error.response?.status,
-        data: error.response?.data,
-      })
-
-      // Fallback to individual API calls
-      try {
-        const [facultiesRes, departmentsRes, usersRes] = await Promise.allSettled([
-          api.get("/faculty/all"),
-          api.get("/department/all"),
-          api.get("/auth/all"),
-        ])
-
-        const faculties = facultiesRes.status === "fulfilled" ? facultiesRes.value.data?.length || 0 : 0
-        const departments = departmentsRes.status === "fulfilled" ? departmentsRes.value.data?.length || 0 : 0
-        const users = usersRes.status === "fulfilled" ? usersRes.value.data?.data?.length || 0 : 0
-
-        setSystemStatus({
-          faculties,
-          departments,
-          users,
-          isEmpty: faculties === 0 && departments === 0 && users === 0,
-          dbConnected: false,
-        })
-      } catch (fallbackError) {
-        console.error("Fallback status check failed:", fallbackError)
-        toast.error("Unable to check system status")
-      }
-    } finally {
-      setStatusLoading(false)
-    }
-  }
-
-  const testDatabaseConnection = async () => {
-    try {
-      setLoading(true)
-      console.log("Testing database connection...")
-
-      const response = await api.get("/setup/test-db")
-      console.log("Database test response:", response.data)
-
-      if (response.data.status === "success") {
-        toast.success("Database connection is working!")
-      } else {
-        toast.error("Database connection failed")
-      }
-    } catch (error) {
-      console.error("Database test failed:", error)
-      toast.error("Database connection test failed: " + (error.response?.data?.message || error.message))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const initializeSystem = async () => {
-    setLoading(true)
-    try {
-      console.log("Initializing system...")
-
-      const response = await api.post("/setup/initialize")
-      console.log("Initialize response:", response.data)
-
-      if (response.data.status === "success") {
-        toast.success("System initialized successfully!")
-        toast.success("Default admin created: admin@university.com / admin123")
-
-        // Refresh status
-        await checkSystemStatus()
-
-        // Show success message with next steps
-        setTimeout(() => {
-          toast.success("You can now register users or login with the admin account!")
-        }, 2000)
-      } else {
-        toast.error("Initialization failed: " + response.data.message)
-      }
-    } catch (error) {
-      console.error("Error initializing system:", error)
-
-      const errorMessage = error.response?.data?.message || error.message
-      const errorDetails = error.response?.data?.error || ""
-
-      if (error.response?.status === 400) {
-        toast.error("System already initialized")
-      } else if (errorMessage.includes("MONGO_URI")) {
-        toast.error("Database connection not configured. Check environment variables.")
-      } else if (errorMessage.includes("Database connection failed")) {
-        toast.error("Cannot connect to database. Check MongoDB Atlas configuration.")
-      } else {
-        toast.error("Initialization failed: " + errorMessage)
-        if (errorDetails) {
-          console.error("Error details:", errorDetails)
-        }
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const resetSystem = async () => {
-    if (!confirm("⚠️ WARNING: This will delete ALL data! Are you sure?")) {
-      return
-    }
-
-    setLoading(true)
-    try {
-      const response = await api.post(
-        "/setup/reset",
-        {},
-        {
-          headers: {
-            "x-reset-confirm": "yes-delete-all-data",
-          },
-        },
-      )
-
-      if (response.data.status === "success") {
-        toast.success("System reset completed")
-        await checkSystemStatus()
-      }
-    } catch (error) {
-      console.error("Reset failed:", error)
-      toast.error("Reset failed: " + (error.response?.data?.message || error.message))
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -240,16 +113,188 @@ export default function Setup() {
     })
   }
 
-  if (statusLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Checking system status...</p>
-        </div>
-      </div>
-    )
+  const createSampleData = async () => {
+    setLoading(true)
+    try {
+      console.log("Starting to create sample data...")
+
+      // Create sample faculties
+      const faculties = [
+        {
+          name: "Faculty of Science",
+          code: "SCI",
+          description: "Faculty of Science and Technology",
+          contactEmail: "science@university.com",
+          contactPhone: "+1234567890",
+        },
+        {
+          name: "Faculty of Arts",
+          code: "ART",
+          description: "Faculty of Arts and Humanities",
+          contactEmail: "arts@university.com",
+          contactPhone: "+1234567891",
+        },
+        {
+          name: "Faculty of Engineering",
+          code: "ENG",
+          description: "Faculty of Engineering",
+          contactEmail: "engineering@university.com",
+          contactPhone: "+1234567892",
+        },
+        {
+          name: "Faculty of Business",
+          code: "BUS",
+          description: "Faculty of Business Administration",
+          contactEmail: "business@university.com",
+          contactPhone: "+1234567893",
+        },
+        {
+          name: "Faculty of Medicine",
+          code: "MED",
+          description: "Faculty of Medicine and Health Sciences",
+          contactEmail: "medicine@university.com",
+          contactPhone: "+1234567894",
+        },
+      ]
+
+      console.log("Creating faculties...")
+      let facultiesCreated = 0
+      for (const faculty of faculties) {
+        try {
+          const response = await api.post("/faculty/", faculty)
+          console.log(`Faculty ${faculty.name} created:`, response.data)
+          facultiesCreated++
+        } catch (error) {
+          console.log(`Faculty ${faculty.name} error:`, error.response?.data)
+          if (error.response?.status !== 409) {
+            // Don't count conflicts as errors
+            throw error
+          }
+        }
+      }
+
+      // Wait a bit before creating departments
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      // Create sample departments
+      const departments = [
+        // Science Faculty
+        {
+          name: "Computer Science",
+          code: "CSC",
+          description: "Department of Computer Science",
+          faculty: "Faculty of Science",
+        },
+        {
+          name: "Mathematics",
+          code: "MTH",
+          description: "Department of Mathematics",
+          faculty: "Faculty of Science",
+        },
+        {
+          name: "Physics",
+          code: "PHY",
+          description: "Department of Physics",
+          faculty: "Faculty of Science",
+        },
+        {
+          name: "Chemistry",
+          code: "CHM",
+          description: "Department of Chemistry",
+          faculty: "Faculty of Science",
+        },
+        // Arts Faculty
+        {
+          name: "English Literature",
+          code: "ENG",
+          description: "Department of English Literature",
+          faculty: "Faculty of Arts",
+        },
+        {
+          name: "History",
+          code: "HIS",
+          description: "Department of History",
+          faculty: "Faculty of Arts",
+        },
+        {
+          name: "Philosophy",
+          code: "PHI",
+          description: "Department of Philosophy",
+          faculty: "Faculty of Arts",
+        },
+        // Engineering Faculty
+        {
+          name: "Civil Engineering",
+          code: "CVE",
+          description: "Department of Civil Engineering",
+          faculty: "Faculty of Engineering",
+        },
+        {
+          name: "Electrical Engineering",
+          code: "EEE",
+          description: "Department of Electrical Engineering",
+          faculty: "Faculty of Engineering",
+        },
+        {
+          name: "Mechanical Engineering",
+          code: "MEE",
+          description: "Department of Mechanical Engineering",
+          faculty: "Faculty of Engineering",
+        },
+        // Business Faculty
+        {
+          name: "Business Administration",
+          code: "BBA",
+          description: "Department of Business Administration",
+          faculty: "Faculty of Business",
+        },
+        {
+          name: "Accounting",
+          code: "ACC",
+          description: "Department of Accounting",
+          faculty: "Faculty of Business",
+        },
+        // Medicine Faculty
+        {
+          name: "Medicine",
+          code: "MED",
+          description: "Department of Medicine",
+          faculty: "Faculty of Medicine",
+        },
+        {
+          name: "Nursing",
+          code: "NUR",
+          description: "Department of Nursing",
+          faculty: "Faculty of Medicine",
+        },
+      ]
+
+      console.log("Creating departments...")
+      let departmentsCreated = 0
+      for (const department of departments) {
+        try {
+          const response = await api.post("/department/", department)
+          console.log(`Department ${department.name} created:`, response.data)
+          departmentsCreated++
+        } catch (error) {
+          console.log(`Department ${department.name} error:`, error.response?.data)
+          if (error.response?.status !== 409) {
+            // Don't count conflicts as errors
+            throw error
+          }
+        }
+      }
+
+      toast.success(`Sample data created! ${facultiesCreated} faculties and ${departmentsCreated} departments added.`)
+      checkSystemStatus()
+    } catch (error) {
+      console.error("Error creating sample data:", error)
+      toast.error("Failed to create sample data. Please try again.")
+    }
+    setLoading(false)
   }
+
+  const isSystemEmpty = systemStatus.faculties === 0 && systemStatus.departments === 0 && systemStatus.users === 0
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -280,225 +325,167 @@ export default function Setup() {
                 <div className="text-sm text-purple-800">Users</div>
               </div>
             </div>
-
-            {/* Database Connection Status */}
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Database Connection:</span>
-                <span className={`text-sm font-bold ${systemStatus.dbConnected ? "text-green-600" : "text-red-600"}`}>
-                  {systemStatus.dbConnected ? "✅ Connected" : "❌ Disconnected"}
-                </span>
-              </div>
-            </div>
-
-            {systemStatus.isEmpty && (
+            {isSystemEmpty && (
               <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
                 <p className="text-amber-800 text-sm">
-                  <strong>🚨 Empty Database Detected:</strong> Your production database is empty. Use the quick setup
-                  below to get started.
+                  <strong>Empty Database Detected:</strong> Your system appears to be new. Use the quick setup below to
+                  get started.
                 </p>
-              </div>
-            )}
-
-            {!systemStatus.isEmpty && (
-              <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-green-800 text-sm">
-                  <strong>✅ System Ready:</strong> Your database has been initialized. You can now register users or
-                  login.
-                </p>
-              </div>
-            )}
-
-            {/* Debug Information */}
-            {debugInfo && (
-              <div className="mt-4 p-4 bg-gray-100 rounded-lg">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Debug Information:</h4>
-                <div className="text-xs text-gray-600 space-y-1">
-                  <div>MongoDB URI: {debugInfo.mongoUri || "Not configured"}</div>
-                  <div>JWT Secret: {debugInfo.jwtSign || "Not configured"}</div>
-                  <div>Environment: {debugInfo.nodeEnv || "Not set"}</div>
-                  <div>Port: {debugInfo.port || "Not set"}</div>
-                  {debugInfo.error && <div className="text-red-600">Error: {debugInfo.error}</div>}
-                </div>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Action Buttons */}
-        <div className="text-center space-y-4">
-          <div className="space-x-2">
-            <Button onClick={testDatabaseConnection} disabled={loading} variant="outline" size="sm">
-              {loading ? "Testing..." : "🔍 Test Database Connection"}
-            </Button>
+        {/* Quick Setup */}
+        <div className="text-center">
+          <Button onClick={createSampleData} disabled={loading} size="lg" className="mb-4">
+            {loading ? "Creating..." : "🚀 Quick Setup - Create Sample Data"}
+          </Button>
+          <p className="text-sm text-gray-500">
+            This will create 5 faculties and 14 departments to get you started quickly
+          </p>
+          <div className="mt-4">
             <Button variant="outline" onClick={checkSystemStatus} disabled={loading} size="sm">
               🔄 Refresh Status
             </Button>
           </div>
-
-          <div>
-            <Button onClick={initializeSystem} disabled={loading || !systemStatus.isEmpty} size="lg" className="mb-4">
-              {loading ? "Initializing..." : "🚀 Quick Setup - Initialize System"}
-            </Button>
-            <p className="text-sm text-gray-500">
-              This will create 4 faculties, 9 departments, and a default admin user
-            </p>
-          </div>
-
-          {!systemStatus.isEmpty && (
-            <div className="space-x-2">
-              <Button variant="outline" onClick={() => (window.location.href = "/register")} size="sm">
-                👤 Register User
-              </Button>
-              <Button onClick={() => (window.location.href = "/login")} size="sm">
-                🚀 Go to Login
-              </Button>
-              {process.env.NODE_ENV !== "production" && (
-                <Button variant="destructive" onClick={resetSystem} disabled={loading} size="sm">
-                  🗑️ Reset System
-                </Button>
-              )}
-            </div>
-          )}
         </div>
 
-        {/* Manual Creation Forms - Only show if system is not empty */}
-        {!systemStatus.isEmpty && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>Create Faculty Manually</CardTitle>
-                <CardDescription>Add a new faculty to the system</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleCreateFaculty} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Faculty Name</label>
-                    <Input
-                      name="name"
-                      required
-                      value={facultyData.name}
-                      onChange={handleFacultyChange}
-                      placeholder="e.g., Faculty of Science"
-                    />
-                  </div>
+        {/* Manual Creation Forms */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Create Faculty Manually</CardTitle>
+              <CardDescription>Add a new faculty to the system</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleCreateFaculty} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Faculty Name</label>
+                  <Input
+                    name="name"
+                    required
+                    value={facultyData.name}
+                    onChange={handleFacultyChange}
+                    placeholder="e.g., Faculty of Science"
+                  />
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Faculty Code</label>
-                    <Input
-                      name="code"
-                      required
-                      value={facultyData.code}
-                      onChange={handleFacultyChange}
-                      placeholder="e.g., SCI"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Faculty Code</label>
+                  <Input
+                    name="code"
+                    required
+                    value={facultyData.code}
+                    onChange={handleFacultyChange}
+                    placeholder="e.g., SCI"
+                  />
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Contact Email</label>
-                    <Input
-                      name="contactEmail"
-                      type="email"
-                      required
-                      value={facultyData.contactEmail}
-                      onChange={handleFacultyChange}
-                      placeholder="faculty@university.com"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Contact Email</label>
+                  <Input
+                    name="contactEmail"
+                    type="email"
+                    required
+                    value={facultyData.contactEmail}
+                    onChange={handleFacultyChange}
+                    placeholder="faculty@university.com"
+                  />
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Contact Phone</label>
-                    <Input
-                      name="contactPhone"
-                      required
-                      value={facultyData.contactPhone}
-                      onChange={handleFacultyChange}
-                      placeholder="+1234567890"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Contact Phone</label>
+                  <Input
+                    name="contactPhone"
+                    required
+                    value={facultyData.contactPhone}
+                    onChange={handleFacultyChange}
+                    placeholder="+1234567890"
+                  />
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                    <textarea
-                      name="description"
-                      value={facultyData.description}
-                      onChange={handleFacultyChange}
-                      placeholder="Faculty description"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      rows="3"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea
+                    name="description"
+                    value={facultyData.description}
+                    onChange={handleFacultyChange}
+                    placeholder="Faculty description"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows="3"
+                  />
+                </div>
 
-                  <Button type="submit" disabled={loading} className="w-full">
-                    {loading ? "Creating..." : "Create Faculty"}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+                <Button type="submit" disabled={loading} className="w-full">
+                  {loading ? "Creating..." : "Create Faculty"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Create Department Manually</CardTitle>
-                <CardDescription>Add a new department to a faculty</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleCreateDepartment} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Department Name</label>
-                    <Input
-                      name="name"
-                      required
-                      value={departmentData.name}
-                      onChange={handleDepartmentChange}
-                      placeholder="e.g., Computer Science"
-                    />
-                  </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Create Department Manually</CardTitle>
+              <CardDescription>Add a new department to a faculty</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleCreateDepartment} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Department Name</label>
+                  <Input
+                    name="name"
+                    required
+                    value={departmentData.name}
+                    onChange={handleDepartmentChange}
+                    placeholder="e.g., Computer Science"
+                  />
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Department Code</label>
-                    <Input
-                      name="code"
-                      required
-                      value={departmentData.code}
-                      onChange={handleDepartmentChange}
-                      placeholder="e.g., CSC"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Department Code</label>
+                  <Input
+                    name="code"
+                    required
+                    value={departmentData.code}
+                    onChange={handleDepartmentChange}
+                    placeholder="e.g., CSC"
+                  />
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Faculty Name</label>
-                    <Input
-                      name="faculty"
-                      required
-                      value={departmentData.faculty}
-                      onChange={handleDepartmentChange}
-                      placeholder="e.g., Faculty of Science"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Faculty Name</label>
+                  <Input
+                    name="faculty"
+                    required
+                    value={departmentData.faculty}
+                    onChange={handleDepartmentChange}
+                    placeholder="e.g., Faculty of Science"
+                  />
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                    <textarea
-                      name="description"
-                      value={departmentData.description}
-                      onChange={handleDepartmentChange}
-                      placeholder="Department description"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      rows="3"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea
+                    name="description"
+                    value={departmentData.description}
+                    onChange={handleDepartmentChange}
+                    placeholder="Department description"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows="3"
+                  />
+                </div>
 
-                  <Button type="submit" disabled={loading || systemStatus.faculties === 0} className="w-full">
-                    {loading ? "Creating..." : "Create Department"}
-                  </Button>
-                  {systemStatus.faculties === 0 && (
-                    <p className="text-sm text-amber-600">Create at least one faculty first</p>
-                  )}
-                </form>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+                <Button type="submit" disabled={loading || systemStatus.faculties === 0} className="w-full">
+                  {loading ? "Creating..." : "Create Department"}
+                </Button>
+                {systemStatus.faculties === 0 && (
+                  <p className="text-sm text-amber-600">Create at least one faculty first</p>
+                )}
+              </form>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Next Steps */}
         <Card>
@@ -555,19 +542,16 @@ export default function Setup() {
               </div>
             </div>
 
-            {systemStatus.users > 0 && (
-              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h4 className="font-medium text-blue-900 mb-2">🎉 System Ready!</h4>
-                <p className="text-blue-800 text-sm mb-3">
-                  Your system is initialized. You can login with the default admin account:
-                </p>
-                <div className="bg-blue-100 p-3 rounded font-mono text-sm">
-                  <div>📧 Email: admin@university.com</div>
-                  <div>🔑 Password: admin123</div>
-                </div>
-                <p className="text-blue-700 text-xs mt-2">⚠️ Please change the admin password after first login!</p>
-              </div>
-            )}
+            <div className="mt-6 flex space-x-3">
+              {systemStatus.faculties > 0 && systemStatus.departments > 0 && (
+                <Button onClick={() => (window.location.href = "/register")} variant="outline">
+                  👤 Register Admin User
+                </Button>
+              )}
+              {systemStatus.users > 0 && (
+                <Button onClick={() => (window.location.href = "/login")}>🚀 Go to Login</Button>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

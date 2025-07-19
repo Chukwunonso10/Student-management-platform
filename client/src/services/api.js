@@ -1,11 +1,11 @@
 import axios from "axios"
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL_PRODUCTION || "http://localhost:5000/api",
+  baseURL: import.meta.env.VITE_API_BASE_URL|| "https://student-management-platform-70dz.onrender.com/api",
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 100000, // 10 second timeout
+  timeout: 10000, // 10 second timeout
 })
 
 // Add token to requests if available
