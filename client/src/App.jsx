@@ -1,5 +1,3 @@
-"use client"
-
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
 import { AuthProvider, useAuth } from "./contexts/AuthContext"
 import { ThemeProvider } from "./contexts/ThemeContext"
@@ -16,6 +14,7 @@ import Faculties from "./pages/Faculties"
 import Departments from "./pages/Departments"
 import Layout from "./components/Layout"
 import { Toaster } from "sonner"
+import ThemeToggle from "@/components/ThemeToggle"
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -142,6 +141,7 @@ function AppContent() {
 function App() {
   return (
     <ThemeProvider>
+      <ThemeToggle />
       <AuthProvider>
         <Router>
           <div className="min-h-screen bg-background text-foreground">
