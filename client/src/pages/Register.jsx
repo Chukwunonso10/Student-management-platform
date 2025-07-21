@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
+import ThemeToggle from "@/components/ThemeToggle"
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -154,6 +155,7 @@ export default function Register() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
+        <ThemeToggle />
         <Card>
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">Create your account</CardTitle>
