@@ -2,8 +2,8 @@ import axios from "axios"
 
 // Get API URL from environment or use production default
 const getApiUrl = () => {
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL
   }
 
   // In production, if no VITE_API_URL is set, use relative path
