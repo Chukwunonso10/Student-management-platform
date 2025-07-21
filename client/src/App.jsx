@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { AuthProvider, useAuth } from "./contexts/AuthContext"
 import { ThemeProvider } from "./contexts/ThemeContext"
 import { useEffect, useState } from "react"
-import { checkHealth } from "./services/api"
+//import { checkHealth } from "./services/api"
 import Login from "./pages/Login"
 import Register from "./pages/Register"
 import Setup from "./pages/Setup"
