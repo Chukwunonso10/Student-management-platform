@@ -1,3 +1,5 @@
+"use client"
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
 import { AuthProvider, useAuth } from "./contexts/AuthContext"
 import { ThemeProvider } from "./contexts/ThemeContext"
@@ -14,14 +16,13 @@ import Faculties from "./pages/Faculties"
 import Departments from "./pages/Departments"
 import Layout from "./components/Layout"
 import { Toaster } from "sonner"
-import ThemeToggle from "@/components/ThemeToggle"
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading...</p>
@@ -42,7 +43,7 @@ function PublicRoute({ children }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading...</p>
@@ -141,15 +142,19 @@ function AppContent() {
 function App() {
   return (
     <ThemeProvider>
-      <ThemeToggle />
-      <AuthProvider>
-        <Router>
-          <div className="min-h-screen bg-background text-foreground">
+      <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
+        <AuthProvider>
+          <Router>
             <AppContent />
-            <Toaster position="top-right" />
-          </div>
-        </Router>
-      </AuthProvider>
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                className: "bg-background border-border text-foreground",
+              }}
+            />
+          </Router>
+        </AuthProvider>
+      </div>
     </ThemeProvider>
   )
 }

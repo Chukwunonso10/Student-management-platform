@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
+import ThemeToggle from "../components/ThemeToggle"
+import { GraduationCap, Eye, EyeOff } from "lucide-react"
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -12,6 +14,7 @@ export default function Login() {
     password: "",
   })
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const { login } = useAuth()
 
   const handleSubmit = async (e) => {
@@ -37,17 +40,27 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">Sign in to your account</CardTitle>
-            <CardDescription>Enter your credentials to access the student management system</CardDescription>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md space-y-6">
+        {/* Theme Toggle */}
+        <div className="flex justify-end">
+          <ThemeToggle />
+        </div>
+
+        <Card className="border shadow-lg">
+          <CardHeader className="text-center space-y-4">
+            <div className="mx-auto h-12 w-12 bg-primary rounded-xl flex items-center justify-center">
+              <GraduationCap className="h-7 w-7 text-primary-foreground" />
+            </div>
+            <div>
+              <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
+              <CardDescription className="text-base">Sign in to your student management account</CardDescription>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-6">
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <div className="space-y-2">
+                <label htmlFor="email" className="text-sm font-medium">
                   Email address
                 </label>
                 <Input
@@ -58,39 +71,61 @@ export default function Login() {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="Enter your email"
+                  className="h-11"
                 />
               </div>
 
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <div className="space-y-2">
+                <label htmlFor="password" className="text-sm font-medium">
                   Password
                 </label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="Enter your password"
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="Enter your password"
+                    className="h-11 pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-11 px-3 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full h-11" disabled={loading}>
                 {loading ? "Signing in..." : "Sign in"}
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">
                 Don't have an account?{" "}
-                <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
+                <Link to="/register" className="font-medium text-primary hover:underline">
                   Sign up
                 </Link>
               </p>
             </div>
           </CardContent>
         </Card>
+
+        {/* Debug info to check if theme is working */}
+        <div className="text-center text-xs text-muted-foreground">
+          <p>Theme toggle should appear above ↑</p>
+        </div>
       </div>
     </div>
   )
