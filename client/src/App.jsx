@@ -12,7 +12,7 @@ import Students from "./pages/Students"
 import Lecturers from "./pages/Lecturers"
 import Faculties from "./pages/Faculties"
 import Departments from "./pages/Departments"
-import Layout from "./components/Layout"
+import Layout from "@/components/Layouts"
 import { Toaster } from "sonner"
 
 function ProtectedRoute({ children }) {
