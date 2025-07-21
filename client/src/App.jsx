@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
 import { AuthProvider, useAuth } from "./contexts/AuthContext"
 import { ThemeProvider } from "./contexts/ThemeContext"
-import { useEffect, useState } from "react"
+//import { useEffect, useState } from "react"
 //import { checkHealth } from "./services/api"
 import Login from "./pages/Login"
 import Register from "./pages/Register"
@@ -58,44 +58,44 @@ function PublicRoute({ children }) {
 }
 
 function AppContent() {
-  const [healthStatus, setHealthStatus] = useState(null)
-  const [healthError, setHealthError] = useState(null)
+  // const [healthStatus, setHealthStatus] = useState(null)
+  // const [healthError, setHealthError] = useState(null)
 
-  useEffect(() => {
-    const checkBackendHealth = async () => {
-      try {
-        const health = await checkHealth()
-        setHealthStatus(health)
-        console.log("Backend health:", health)
-      } catch (error) {
-        setHealthError(error.message)
-        console.error("Backend health check failed:", error)
-      }
-    }
+  // useEffect(() => {
+  //   const checkBackendHealth = async () => {
+  //     try {
+  //       const health = await checkHealth()
+  //       setHealthStatus(health)
+  //       console.log("Backend health:", health)
+  //     } catch (error) {
+  //       setHealthError(error.message)
+  //       console.error("Backend health check failed:", error)
+  //     }
+  //   }
 
-    checkBackendHealth()
-  }, [])
+  //   checkBackendHealth()
+  // }, [])
 
-  if (healthError && !healthStatus) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center max-w-md mx-auto p-6">
-          <div className="text-destructive text-6xl mb-4">⚠️</div>
-          <h1 className="text-2xl font-bold mb-4">Backend Connection Error</h1>
-          <p className="text-muted-foreground mb-6">
-            Unable to connect to the backend server. Please check if the server is running.
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90"
-          >
-            Retry Connection
-          </button>
-          <div className="mt-4 text-sm text-muted-foreground">Error: {healthError}</div>
-        </div>
-      </div>
-    )
-  }
+  // if (healthError && !healthStatus) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center bg-background">
+  //       <div className="text-center max-w-md mx-auto p-6">
+  //         <div className="text-destructive text-6xl mb-4">⚠️</div>
+  //         <h1 className="text-2xl font-bold mb-4">Backend Connection Error</h1>
+  //         <p className="text-muted-foreground mb-6">
+  //           Unable to connect to the backend server. Please check if the server is running.
+  //         </p>
+  //         <button
+  //           onClick={() => window.location.reload()}
+  //           className="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90"
+  //         >
+  //           Retry Connection
+  //         </button>
+  //         <div className="mt-4 text-sm text-muted-foreground">Error: {healthError}</div>
+  //       </div>
+  //     </div>
+  //   )
+  //}
 
   return (
     <Routes>
