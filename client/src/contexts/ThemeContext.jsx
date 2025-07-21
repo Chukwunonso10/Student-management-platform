@@ -1,6 +1,10 @@
 import { createContext, useContext, useState, useEffect } from "react"
 
-const ThemeContext = createContext()
+const ThemeContext = createContext({
+  theme: "light",
+  toggleTheme: () => {},
+  isDark: false,
+})
 
 export function useTheme() {
   const context = useContext(ThemeContext)
@@ -14,42 +18,75 @@ export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState("light")
   const [mounted, setMounted] = useState(false)
 
+  // Initialize theme on mount
   useEffect(() => {
-    setMounted(true)
+    const initializeTheme = () => {
+      try {
+        // Check localStorage first
+        const savedTheme = localStorage.getItem("theme")
 
-    // Check for saved theme preference or default to system preference
-    const savedTheme = localStorage.getItem("theme")
-    const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+        // Check system preference
+        const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
 
-    const initialTheme = savedTheme || systemTheme
-    setTheme(initialTheme)
+        // Use saved theme or fall back to system preference
+        const initialTheme = savedTheme || systemTheme
 
-    // Apply theme immediately to prevent flash
-    applyTheme(initialTheme)
+        console.log("🎨 Theme initialization:", {
+          saved: savedTheme,
+          system: systemTheme,
+          chosen: initialTheme,
+        })
+
+        setTheme(initialTheme)
+        applyTheme(initialTheme)
+        setMounted(true)
+      } catch (error) {
+        console.error("Theme initialization error:", error)
+        setTheme("light")
+        applyTheme("light")
+        setMounted(true)
+      }
+    }
+
+    initializeTheme()
   }, [])
 
+  // Apply theme when it changes
   useEffect(() => {
     if (!mounted) return
+
     applyTheme(theme)
-    localStorage.setItem("theme", theme)
+
+    try {
+      localStorage.setItem("theme", theme)
+    } catch (error) {
+      console.error("Failed to save theme:", error)
+    }
   }, [theme, mounted])
 
   const applyTheme = (newTheme) => {
-    const root = document.documentElement
-    root.classList.remove("light", "dark")
-    root.classList.add(newTheme)
+    try {
+      const root = document.documentElement
 
-    // Also set data attribute for additional styling options
-    root.setAttribute("data-theme", newTheme)
+      // Remove existing theme classes
+      root.classList.remove("light", "dark")
+
+      // Add new theme class
+      root.classList.add(newTheme)
+
+      // Set data attribute for additional styling
+      root.setAttribute("data-theme", newTheme)
+
+      console.log("🎨 Applied theme:", newTheme, "Classes:", root.classList.toString())
+    } catch (error) {
+      console.error("Failed to apply theme:", error)
+    }
   }
 
   const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"))
-  }
-
-  // Prevent hydration mismatch by not rendering until mounted
-  if (!mounted) {
-    return <div style={{ visibility: "hidden" }}>{children}</div>
+    const newTheme = theme === "light" ? "dark" : "light"
+    console.log("🎨 Toggling theme:", theme, "→", newTheme)
+    setTheme(newTheme)
   }
 
   const value = {
@@ -57,6 +94,17 @@ export function ThemeProvider({ children }) {
     toggleTheme,
     isDark: theme === "dark",
     isLight: theme === "light",
+  }
+
+  // Show loading state until mounted to prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </div>
+    )
   }
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
