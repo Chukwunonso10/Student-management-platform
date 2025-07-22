@@ -36,10 +36,26 @@ const corsOptions = {
 
 app.use(cors(corsOptions))
 
-// Request logging middleware
+// Request logging middleware with better error handling
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`)
   next()
+})
+
+// Global error handler middleware
+app.use((err, req, res, next) => {
+  console.error("❌ Global Error Handler:", {
+    message: err.message,
+    stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
+    url: req.url,
+    method: req.method,
+  })
+
+  res.status(500).json({
+    message: "Internal server error",
+    error: process.env.NODE_ENV === "development" ? err.message : "Something went wrong",
+    timestamp: new Date().toISOString(),
+  })
 })
 
 // Root route
@@ -119,46 +135,101 @@ try {
   console.error("This will prevent system initialization!")
 }
 
-// Auth route
+// Auth route with error handling
 try {
   const authRoute = require("./Routes/authRoute")
-  app.use("/api/auth", authRoute)
+  app.use("/api/auth", (req, res, next) => {
+    try {
+      authRoute(req, res, next)
+    } catch (error) {
+      console.error("❌ Auth route error:", error)
+      res.status(500).json({
+        message: "Authentication service error",
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      })
+    }
+  })
   console.log("✅ Auth route loaded")
 } catch (error) {
   console.error("❌ Failed to load auth route:", error.message)
 }
 
-// Faculty route
+// Faculty route with error handling
 try {
   const facultyRoute = require("./Routes/facultyRoute")
-  app.use("/api/faculty", facultyRoute)
+  app.use("/api/faculty", (req, res, next) => {
+    try {
+      facultyRoute(req, res, next)
+    } catch (error) {
+      console.error("❌ Faculty route error:", error)
+      res.status(500).json({
+        message: "Faculty service error",
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      })
+    }
+  })
   console.log("✅ Faculty route loaded")
 } catch (error) {
   console.error("❌ Failed to load faculty route:", error.message)
 }
 
-// Department route
+// Department route with error handling
 try {
   const departmentRoute = require("./Routes/departmentRoute")
-  app.use("/api/department", departmentRoute)
+  app.use("/api/department", (req, res, next) => {
+    try {
+      departmentRoute(req, res, next)
+    } catch (error) {
+      console.error("❌ Department route error:", error)
+      res.status(500).json({
+        message: "Department service error",
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      })
+    }
+  })
   console.log("✅ Department route loaded")
 } catch (error) {
   console.error("❌ Failed to load department route:", error.message)
 }
 
-// Course route
+// Course route with error handling
 try {
   const courseRoute = require("./Routes/courseRoute")
-  app.use("/api/course", courseRoute)
+  app.use("/api/course", (req, res, next) => {
+    try {
+      courseRoute(req, res, next)
+    } catch (error) {
+      console.error("❌ Course route error:", error)
+      res.status(500).json({
+        message: "Course service error",
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      })
+    }
+  })
   console.log("✅ Course route loaded")
 } catch (error) {
   console.error("❌ Failed to load course route:", error.message)
 }
 
-// Lecturer route
+// Lecturer route with error handling
 try {
   const lecturerRoute = require("./Routes/lecturerRoute")
-  app.use("/api/lecturer", lecturerRoute)
+  app.use("/api/lecturer", (req, res, next) => {
+    try {
+      lecturerRoute(req, res, next)
+    } catch (error) {
+      console.error("❌ Lecturer route error:", error)
+      res.status(500).json({
+        message: "Lecturer service error",
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      })
+    }
+  })
   console.log("✅ Lecturer route loaded")
 } catch (error) {
   console.error("❌ Failed to load lecturer route:", error.message)
@@ -166,23 +237,34 @@ try {
 
 console.log("✅ Route loading completed!")
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error("❌ Error:", err.stack)
-  res.status(500).json({
-    message: "Something went wrong!",
-    error: process.env.NODE_ENV === "development" ? err.message : "Internal server error",
-    timestamp: new Date().toISOString(),
-  })
-})
+// Serve static files in production
+if (process.env.NODE_ENV === "production") {
+  const staticPath = path.join(__dirname, "dist")
+  console.log("📁 Serving static files from:", staticPath)
 
-// Handle 404 - this should be last
-app.use((req, res) => {
-  console.log("404 - Route not found:", req.path)
+  app.use(express.static(staticPath))
+
+  // Handle React Router (return `index.html` for all non-API routes)
+  app.get("*", (req, res) => {
+    if (!req.path.startsWith("/api")) {
+      res.sendFile(path.join(staticPath, "index.html"))
+    } else {
+      res.status(404).json({
+        message: "API route not found",
+        path: req.path,
+        timestamp: new Date().toISOString(),
+      })
+    }
+  })
+}
+
+// Handle 404 for API routes only
+app.use("/api/*", (req, res) => {
+  console.log("404 - API route not found:", req.path)
   res.status(404).json({
-    message: "Route not found",
+    message: "API route not found",
     path: req.path,
-    availableRoutes: ["/", "/api", "/api/health", "/api/test", "/api/setup/status"],
+    availableRoutes: ["/api", "/api/health", "/api/test", "/api/setup/status"],
     timestamp: new Date().toISOString(),
   })
 })
@@ -207,10 +289,15 @@ const startServer = async () => {
     console.error("❌ Failed to start server:", error.message)
 
     // In production, try to start server anyway for debugging
-    console.log("⚠️ Starting server without database connection for debugging...")
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(`⚠️ Server running on port ${PORT} (database connection failed)`)
-    })
+    if (process.env.NODE_ENV === "production") {
+      console.log("⚠️ Starting server without database connection for debugging...")
+      app.listen(PORT, "0.0.0.0", () => {
+        console.log(`⚠️ Server running on port ${PORT} (database connection failed)`)
+        console.log("🔧 Check your MONGO_URI environment variable")
+      })
+    } else {
+      process.exit(1)
+    }
   }
 }
 
